@@ -23,7 +23,10 @@ QString GFR(int regIndex){
 
 inline QString special_inst(int setlist[]) {
     switch(setlist[5]){
-        case 0: return "SLL " + GGR(setlist[3]) + ", " + GGR(setlist[2]) + ", " + GGR(setlist[4]);
+        case 0: if(setlist[1] != 0 or setlist[2] != 0 or setlist[3] != 0){
+            return "SLL " + GGR(setlist[3]) + ", " + GGR(setlist[2]) + ", " + GGR(setlist[4]);
+        }
+        else return "NOP";
         case 2: return "SRL " + GGR(setlist[3]) + ", " + GGR(setlist[2]) + ", " + GGR(setlist[4]);
         case 3: return "SRA " + GGR(setlist[3]) + ", " + GGR(setlist[2]) + ", " + GGR(setlist[4]);
         case 4: return "SLLV " + GGR(setlist[3]) + ", " + GGR(setlist[2]) + ", " + GGR(setlist[1]);
@@ -353,11 +356,6 @@ inline QString MMI_inst(int setlist[]) {
 QString MainWindow::convToInstruction(QString input) {
     //refer to page 370 of the EE core instruction manual
     input = reverse_input(input);
-    int wholeInst = input.toInt(nullptr, 2);
-    if (wholeInst == 0){
-        return "NOP ";
-    }
-    QString finalInst;
     QString set1 = input.mid(0,6);
     QString set2 = input.mid(6,5);
     QString set3 = input.mid(11,5);
