@@ -1,27 +1,5 @@
 #include "mainwindow.h"
 
-/*QByteArray convFromInst(QString instruction){
-    QString findInst = instruction;
-    int spacePos;
-    QString instItems[6];
-    for (int i=0; i<6;++i){
-        spacePos = findInst.indexOf(" ");
-        instItems[i] = findInst.left(spacePos);
-        findInst = findInst.right(spacePos);
-    }
-
-    instList getInst;
-    QByteArray MipsInst;
-    switch (getInst) {
-    case instList::ADD:
-        MipsInst.append("add");
-        return MipsInst;
-    case instList::MADD:
-        MipsInst.append("madd");
-        return MipsInst;
-    }
-}*/
-
 QBitArray intToBit(int v, int length)
 {
     QBitArray ba(length);
@@ -33,7 +11,6 @@ QBitArray intToBit(int v, int length)
 
 QByteArray bitToByte(QBitArray bits) {
     QByteArray bytes;
-    qDebug() << bits.count();
     bytes.resize(bits.count()/8);
     bytes.fill(0);
     int i = 0;
@@ -52,12 +29,11 @@ int fI(QString seek) //Find Instruction
                                /*i21m	6 5 5 16    The Weird One*/ "ADDI",
                                /*i1m	6 5 5 16    REGIMM*/ "BGEZ", "BGEZAL", "BGEZALL", "BGEZL", "BLTZ", "BLTZAL", "BLTZALL", "BLTZL", "TEQI", "TGEI", "TGEIU", "TLTI", "TLTIU", "TNEI", "MTSAB", "MTSAH",
                                /*CPU Special Instructions*/
-                               /*i21	6 5 5 5 5 6 special*/ "JALR",
+                               /*i21	26 special*/ "JALR",
                                /*i213	6 5 5 5 5 6 special*/ "DSLL", "DSLL32", "DSRA", "DSRA32", "DSRL", "DSRL32", "SLL", "SRA", "SRL",
                                /*i312	6 5 5 5 5 6 special*/ "ADD", "ADDU", "AND", "DADD", "DADDU", "DSUB", "DSUBU", "MOVN", "MOVZ", "NOR", "OR", "SLT", "SLTU", "SUB", "SUBU", "XOR",
                                /*i321	6 5 5 5 5 6 special*/ "DSLLV", "DSRAV", "DSRLV", "SLLV", "SRAV", "SRLV",
-                               /*i12	6 5 5 10 6  special*/ "MULT", "MULTU", "TEQ", "TGE", "TGEU", "TLT", "TLTU", "TNE",
-                               /*i12m	6 5 5 10 6  special*/ "DIV", "DIVU",
+                               /*i12	6 5 5 10 6  special*/ "MULT", "MULTU", "TEQ", "TGE", "TGEU", "TLT", "TLTU", "TNE", "DIV", "DIVU",
                                /*i1     6 5 15 6    special*/ "JR", "MTHI", "MTLO",
                                /*i		6 20 6      special*/ "BREAK", "SYSCALL",
                                /*i1     6 15 5 6    special*/ "SYNC.stype", "MFHI", "MFLO",
@@ -145,19 +121,7 @@ int fF(QString seek) //Find Float Register
     return -1;
 }
 
-QByteArray MainWindow::convFromInst(QString instruction)
-{
-    QString findInst = instruction;
-    int spacePos;
-    int instLength;
-    QString II[4]; //Instruction Items
-    for (int i=0; i<4;++i){
-        instLength = findInst.length();
-        spacePos = findInst.indexOf(" ");
-        II[i] = findInst.left(spacePos);
-        findInst = findInst.mid(spacePos+1, instLength);
-    }
-
+int fID(int seek){
     int listOfInstID[299] = {0,
                              1,17,19,3,0,16,18,2,12,8,9,10,11,14,24,25,
                              9,
@@ -212,10 +176,28 @@ QByteArray MainWindow::convFromInst(QString instruction)
                              0
     };
 
-    int IR[6] = {0,0,0,0,0,0}; //Instruction Return, default is NOP
+    return listOfInstID[seek];
+}
+
+QByteArray MainWindow::convFromInst(QString instruction)
+{
+    QString findInst = instruction;
+    int spacePos;
+    int instLength;
+    QString II[4]; //Instruction Items
+    for (int i=0; i<4;++i){
+        instLength = findInst.length();
+        spacePos = findInst.indexOf(" ");
+        II[i] = findInst.left(spacePos);
+        findInst = findInst.mid(spacePos+1, instLength);
+    }
+
+
+
+    int IR[7] = {0,0,0,0,0,0,0}; //Instruction Return, default is NOP
     int BL[7] = {0,0,0,0,0,0,0}; //Bit Length
     uint16_t x = fI(II[0]); //Find instruction index
-    uint16_t i0 = listOfInstID[x];
+    uint16_t i0 = fID(x);
     uint16_t i1 = fG(II[1]);
     uint16_t i2 = fG(II[2]);
     uint16_t i3 = fG(II[3]);
@@ -223,18 +205,18 @@ QByteArray MainWindow::convFromInst(QString instruction)
     /*CPU section needs to be reorganized to match the now-divided CPU instructions*/
     if (x == 0){
         qDebug() << i0 << " ADDI	6 5 5 16 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = 0, IR[3] = 31, IR[4] = 0, IR[5] = i0;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
+        IR[0] = 0, IR[1] = i2, IR[2] = i1, IR[3] = i3;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
 
     } else if (x >= 1 && x <= 16){
         qDebug() << i0 << " CPU REGIMM i1m	6 5 5 16 ";
-        IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
+        IR[0] = 1, IR[1] = i1, IR[2] = i0, IR[3] = i2;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
 
     } else if (x ==17){
-        qDebug() << i0 << " CPU SPEC i21	6 5 5 5 5 6 ";
-        IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
+        qDebug() << i0 << " CPU SPEC i21	6 26 ";
+        IR[0] = i0, IR[1] = i1;
+        BL[0] = 6, BL[1] = 26;
 
     } else if (x >= 18 && x <=26){
         qDebug() << i0 << " CPU SPEC i213	6 5 5 5 5 6 ";
@@ -243,227 +225,222 @@ QByteArray MainWindow::convFromInst(QString instruction)
 
     } else if (x >= 27 && x <=42){
         qDebug() << i0 << " CPU SPEC i312	6 5 5 5 5 6 ";
-        IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
+        IR[0] = 0, IR[1] = i2, IR[2] = i3, IR[3] = i1, IR[4] = 0, IR[5] = i0;
         BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
     } else if (x >= 43 && x <=48){
         qDebug() << i0 << " CPU SPEC i321	6 5 5 5 5 6 ";
-        IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
+        IR[0] = 0, IR[1] = i3, IR[2] = i2, IR[3] = i1, IR[4] = 0, IR[5] = i0;
         BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
-    } else if (x >= 49 && x <=56){
+    } else if (x >= 49 && x <=58){
         qDebug() << i0 << " CPU SPEC i12	6 5 5 10 6 ";
-        IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
-
-    } else if (x >=57 && x <=58){
-        qDebug() << i0 << " CPU SPEC i12m	6 5 5 10 6 ";
-        IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
+        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = 0, IR[4] = 0, IR[5] = i0;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 10, BL[4] = 6;
 
     } else if (x >= 59 && x <=61){
         qDebug() << i0 << " CPU SPEC i1	6 5 15 6 ";
-        IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
+        IR[0] = 0, IR[1] = i1, IR[2] = 0, IR[3] = i0;
+        BL[0] = 6, BL[1] = 5, BL[2] = 15, BL[3] = 6;
 
-    }else if (x >= 62 && x <=63){
+    } else if (x >= 62 && x <=63){
         qDebug() << i0 << " CPU SPEC i	6 20 6 ";
-        IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
+        IR[0] = 0, IR[1] = i1, IR[2] = i0;
+        BL[0] = 6, BL[1] = 20, BL[2] = 6;
 
     } else if (x >= 64 && x <=66){
         qDebug() << i0 << " CPU SPEC i1	6 15 5 6 ";
-        IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
+        IR[0] = 0, IR[1] = 0, IR[2] = i1, IR[3] = i0;
+        BL[0] = 6, BL[1] = 15, BL[2] = 5, BL[3] = 6;
 
     } else if (x >= 67 && x <=70){
         qDebug() << i0 << " CPU STD i12m	6 5 5 16 ";
-        IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
+        IR[0] = i0, IR[1] = i1, IR[2] = i2, IR[3] = i3;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
 
-    } else if (x >= 71 && x <=75){
+    } else if (x >= 71 && x <=74){
         qDebug() << i0 << " CPU STD i12m	6 5 5 16 ";
-        IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
+        IR[0] = i0, IR[1] = i1, IR[2] = 0, IR[3] = i2;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
+
+    } else if (x ==75){
+        qDebug() << i0 << " CPU STD i12m	6 5 5 16 ";
+        IR[0] = i0, IR[1] = 0, IR[2] = i1, IR[3] = i2;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
 
     } else if (x >= 76 && x <=83){
         qDebug() << i0 << " CPU STD i21m	6 5 5 16 ";
-        IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
+        IR[0] = i0, IR[1] = i2, IR[2] = i1, IR[3] = i3;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
 
-    } else if (x >= 84 && x <=103){
+    } else if (x >= 84 && x <=105){
         qDebug() << i0 << " CPU STD i2m1	6 5 5 16 ";
-        IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
-
-    } else if (x >= 104 && x <=105){
-        qDebug() << i0 << " CPU STD i2m1	6 5 5 16 ";
-        IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
+        IR[0] = i0, IR[1] = i1, IR[2] = i3, IR[3] = i2;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
 
     } else if (x >= 106 && x <=107){
         qDebug() << i0 << " CPU STD im	6 26 ";
-        IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
+        IR[0] = i0, IR[1] = i1;
+        BL[0] = 6, BL[1] = 26;
 
     } else if (x >= 108 && x <=109){
         qDebug() << i0 << " CORE i12ml	6 5 5 16 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
+        IR[0] = i0, IR[1] = i1, IR[2] = i3, IR[3] = i2;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
 
     } else if (x >= 110 && x <=111){
         qDebug() << i0 << " CORE i312	6 5 5 5 5 6 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
+        IR[0] = 0, IR[1] = i2, IR[2] = i3, IR[3] = i1, IR[4] = 0, IR[5] = i0;
         BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
     } else if (x >= 112 && x <=113){
         qDebug() << i0 << " CORE i12	6 5 5 10 6 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
+        IR[0] = 28, IR[1] = i1, IR[2] = i2, IR[3] = 0, IR[4] = i0;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 10, BL[4] = 6;
 
     } else if (x >= 114 && x <=119){
         qDebug() << i0 << " CORE i213	6 5 5 5 5 6 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
+        IR[0] = 28, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
         BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
     } else if (x >= 120 && x <= 126){
         qDebug() << i0 << " CORE MMI i1	6 5 15 6 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
+        IR[0] = 28, IR[1] = i1, IR[2] = 0, IR[3] = i0;
+        BL[0] = 6, BL[1] = 5, BL[2] = 15, BL[3] = 6;
 
     } else if (x >= 127 && x <= 131){
         qDebug() << i0 << " CORE MMI PMFHL i1	6 5 15 6 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
+        IR[0] = 28, IR[1] = i1, IR[2] = i2, IR[3] = i1, IR[4] = i0;
+        BL[0] = 6, BL[1] = 10, BL[2] = 5, BL[3] = 5, BL[4] = 6;
 
     } else if (x >= 132 && x <=133){
         qDebug() << i0 << " CORE i21	6 5 5 5 5 6 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
+        IR[0] = 28, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i0, IR[5] = 8;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
     } else if (x >= 134 && x <=156){
         qDebug() << i0 << " CORE MMI 0 i312  6 5 5 5 5 6 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
+        IR[0] = 28, IR[1] = i2, IR[2] = i3, IR[3] = i1, IR[4] = i0, IR[5] = 8;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
     } else if (x >=157 && x <=159){
-        qDebug() << i0 << " CORE MMI1 i21	6 5 5 10 6 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 10, BL[4] = 6;
+        qDebug() << i0 << " CORE MMI1 i21	6 5 5 5 5 6 ";
+        IR[0] = 28, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i0, IR[5] = 40;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
     } else if (x >= 160 && x <=181){
         qDebug() << i0 << " CORE MMI1 i312	6 5 5 5 5 6 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 15, BL[3] = 6;
+        IR[0] = 28, IR[1] = i2, IR[2] = i3, IR[3] = i1, IR[4] = i0, IR[5] = 40;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
     } else if (x >= 182 && x <=183){
         qDebug() << i0 << " CORE MMI2 i12	6 5 5 5 5 6 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
+        IR[0] = 28, IR[1] = i1, IR[2] = i2, IR[3] = 0, IR[4] = i0, IR[5] = 9;
         BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
     } else if (x >= 184 && x <=187){
         qDebug() << i0 << " CORE MMI2 i21	6 5 5 5 5 6 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
+        IR[0] = 28, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i0, IR[5] = 9;
         BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
     } else if (x >= 188 && x <=199){
         qDebug() << i0 << " CORE MMI2 i312	6 5 5 5 5 6 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 11;
+        IR[0] = 28, IR[1] = i2, IR[2] = i3, IR[3] = i1, IR[4] = i0, IR[5] = 9;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
     } else if (x >= 200 && x <=201){
         qDebug() << i0 << " CORE MMI2 i321	6 5 5 5 5 6 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
+        IR[0] = 28, IR[1] = i3, IR[2] = i2, IR[3] = i1, IR[4] = i0, IR[5] = 9;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
     } else if (x >= 202 && x <=203){
         qDebug() << i0 << " CORE MMI2 i1	6 5 15 6 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
+        IR[0] = 28, IR[1] = 0, IR[2] = i1, IR[3] = i0, IR[4] = 9;
+        BL[0] = 6, BL[1] = 10, BL[2] = 5, BL[3] = 5, BL[4] = 6;
 
     } else if (x == 204){
         qDebug() << i0 << " CORE MMI3 i12	6 5 5 5 5 6 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 5, BL[6] = 1;
+        IR[0] = 28, IR[1] = i1, IR[2] = i2, IR[3] = 0, IR[4] = i0, IR[5] = 41;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
     } else if (x >= 205 && x <=207){
         qDebug() << i0 << " CORE MMI3 i21	6 5 5 5 5 6 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 11;
+        IR[0] = 28, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i0, IR[5] = 41;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
     } else if (x >= 208 && x <=213){
         qDebug() << i0 << " CORE i312	6 5 5 5 5 6 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 11;
+        IR[0] = 28, IR[1] = i2, IR[2] = i3, IR[3] = i1, IR[4] = i0, IR[5] = 41;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
     } else if (x == 214){
         qDebug() << i0 << " CORE MMI3 i321	6 5 5 16 ";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
+        IR[0] = 28, IR[1] = i3, IR[2] = i2, IR[3] = i1, IR[4] = i0, IR[5] = 41;
         BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
 
     } else if (x >= 215 && x <=216){
         qDebug() << i0 << " CORE MMI3 il     6 5 15 6";
         IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 15, BL[4] = 6;
+        BL[0] = 6, BL[1] = 5, BL[2] = 10, BL[4] = 5, BL[5] = 6;
 
     } else if (x >= 217 && x <=220){
         qDebug() << i0 << " COP1 i12     6 5 5 5 11";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 15, BL[4] = 6;
+        IR[0] = 17, IR[1] = i0, IR[2] = i1, IR[3] = i2, IR[4] = 0;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 11;
 
     } else if (x >= 221 && x <=235){
         qDebug() << i0 << " COP1 S i21     6 5 5 5 5 6";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 15, BL[4] = 6;
+        IR[0] = 17, IR[1] = 16, IR[2] = 0, IR[3] = i2, IR[4] = i1, IR[5] = i0;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
     } else if (x >= 236 && x <=244){
         qDebug() << i0 << " COP1 S i321     6 5 5 5 5 6";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 15, BL[4] = 6;
+        IR[0] = 17, IR[1] = 16, IR[2] = i3, IR[3] = i2, IR[4] = i1, IR[5] = i0;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
     } else if (x >= 245 && x <=248){
         qDebug() << i0 << " COP1 BC1 im     6 5 5 16";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 15, BL[4] = 6;
+        IR[0] = 17, IR[1] = 8, IR[2] = i0, IR[3] = i1;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
 
     } else if (x >= 249 && x <=250){
         qDebug() << i0 << " COP0 MF0 i12     6 5 5 5 5 5 1";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 15, BL[4] = 6;
+        IR[0] = 16, IR[1] = 0, IR[2] = i1, IR[3] = 25, IR[4] = 0, IR[5] = i2, IR[6] = i0;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6, BL[6] = 1;
 
     } else if (x == 251){
         qDebug() << i0 << " COP0 MF0 i12     6 5 5 5 11";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 15, BL[4] = 6;
+        IR[0] = 16, IR[1] = 0, IR[2] = i1, IR[3] = i2, IR[4] = 0;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 11;
 
     } else if (x >= 252 && x <=258){
         qDebug() << i0 << " COP0 MF0 i11     6 5 5 5 11";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 15, BL[4] = 6;
+        IR[0] = 16, IR[1] = 0, IR[2] = i1, IR[3] = 24, IR[4] = 0;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 11;
 
     } else if (x >= 259 && x <=260){
         qDebug() << i0 << " COP0 MT0 i12     6 5 5 5 5 5 1";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 15, BL[4] = 6;
+        IR[0] = 16, IR[1] = 4, IR[2] = i1, IR[3] = 25, IR[4] = 0, IR[5] = i2, IR[6] = i0;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 5, BL[6] = 1;
 
     } else if (x == 261){
         qDebug() << i0 << " COP0 MT0 i12     6 5 5 5 11";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 15, BL[4] = 6;
+        IR[0] = 16, IR[1] = 4, IR[2] = i1, IR[3] = i2, IR[4] = 0;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 11;
 
     } else if (x >= 262 && x <=268){
         qDebug() << i0 << " COP0 MT0 i1     6 5 5 5 11";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 15, BL[4] = 6;
+        IR[0] = 16, IR[1] = 4, IR[2] = i1, IR[3] = 24, IR[4] = 0;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 11;
 
     } else if (x >= 269 && x <=272){
         qDebug() << i0 << " COP0 BC0 im     6 5 5 16";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
-        BL[0] = 6, BL[1] = 5, BL[2] = 15, BL[4] = 6;
+        IR[0] = 16, IR[1] = 8, IR[2] = i0, IR[3] = i1;
+        BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
 
     } else if (x >= 273 && x <=275){
         qDebug() << i0 << " COP0 BC0 i     6 5 15 6";
-        IR[0] = 0, IR[1] = i1, IR[2] = i2, IR[3] = i3, IR[4] = 0, IR[5] = 32;
+        IR[0] = 16, IR[1] = 16, IR[2] = 0, IR[3] = i0;
         BL[0] = 6, BL[1] = 5, BL[2] = 15, BL[4] = 6;
 
     } else {
@@ -471,11 +448,12 @@ QByteArray MainWindow::convFromInst(QString instruction)
     }
 
     QByteArray testReturn;
+    QByteArray finalReturn;
     QBitArray tempReturn;
     QBitArray tempArray;
     int positionNow = 0;
     tempReturn.resize(32);
-    for (int i = 0; i<6;++i) {
+    for (int i = 5; i>=0;--i) {
         //qDebug() << "IR: " << QString::number(i) << " " << IR[i];
         //qDebug() << "BL: " << QString::number(i) << "" << BL[i];
         tempArray = intToBit(IR[i], BL[i]);
@@ -488,9 +466,11 @@ QByteArray MainWindow::convFromInst(QString instruction)
         //qDebug() << tempReturn;
     }
     testReturn = bitToByte(tempReturn);
+    //reverse the bytes for correct endian
+    for(int i = testReturn.size()-1;i>=0;--i){
+        finalReturn.append(testReturn.at(i));
+    }
 
-
-    qDebug() << testReturn;
-    return testReturn;
+    return finalReturn;
 }
 
