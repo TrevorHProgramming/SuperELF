@@ -11,23 +11,17 @@ CONFIG += c++11
 SOURCES += \
     BinToInst.cpp \
     InstToBin.cpp \
-    PS2_MIPS/Instructions.cpp \
-    PS2_MIPS/Source.cpp \
-    PS2_MIPS/binstuff.cpp \
     QBinStuff.cpp \
     bufferhandler.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
-    PS2_MIPS/MIPSconv.h \
     mainwindow.h
 
 FORMS += \
     mainwindow.ui
 
-TRANSLATIONS += \
-    MIPS_Editor_en_US.ts
 CONFIG += lrelease
 CONFIG += embed_translations
 
