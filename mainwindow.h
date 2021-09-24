@@ -16,6 +16,7 @@
 #include <QDataStream>
 #include <QBitArray>
 #include <QIODevice>
+#include <QRadioButton>
 
 #include <iostream>
 #include <stdio.h>
@@ -57,6 +58,7 @@ private slots:
     QByteArray convFromInst(QString instruction);
 
 private:
+    long long addressOffset;
     int BufferStart;
     Ui::MainWindow *ui;
 
@@ -88,6 +90,9 @@ private:
     QString fileInPath;
     QString fileOutPath;
     QPushButton ButtonUpdateSettings;
+
+    QRadioButton *radioInst;
+    QRadioButton *radioHex;
 };
 
 /*class SettingsWindow : public QWidget {

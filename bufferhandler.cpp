@@ -11,18 +11,40 @@ void MainWindow::updateFileBuffer(){
     linelist->clear();
     addresslist->clear();
     QString temp = "";
+    QString realInst;
+    QString realHex;
+    QByteArray tempBuffer;
     int j = 0;
-    for (int i = 0; i < 256; i+=4){
-        addresslist[j] = QString::number(BufferNow, 16).rightJustified(8, '0');
-        temp = " | ";
-        //actual code will translate here and append to line
-        QString realInst = hex_to_bin(WindowBuffer.mid(i,4));
-        temp += convToInstruction(realInst);
-        temp += '\n';
+    if (radioInst->isChecked()){
+        for (int i = 0; i < 256; i+=4){
+            addresslist[j] = QString::number(BufferNow + addressOffset, 16).rightJustified(8, '0');
+            temp = " | ";
+            //actual code will translate here and append to line
+            realInst = hex_to_bin(WindowBuffer.mid(i,4));
+            temp += convToInstruction(realInst);
+            temp += '\n';
 
-        linelist[j] = temp;
-        BufferNow += 4;
-        j += 1;
+            linelist[j] = temp;
+            BufferNow += 4;
+            j += 1;
+        }
+    }
+    else {
+        for (int i = 0; i < 256; i+=4){
+            addresslist[j] = QString::number(BufferNow + addressOffset, 16).rightJustified(8, '0');
+            tempBuffer.clear();
+            temp = " | ";
+            for (int k = 0; k <4; ++k){
+                tempBuffer += WindowBuffer.mid(i+3-k, 1);
+            }
+            realHex = QString(tempBuffer.toHex());
+            //realHex = QString(WindowBuffer.mid(i,4).toHex()); //needs to be reversed
+            temp += realHex;
+            temp += '\n';
+            linelist[j] = temp;
+            BufferNow += 4;
+            j += 1;
+        }
     }
     updateWindowBuffer();
 }
@@ -37,14 +59,19 @@ void MainWindow::updateWindowBuffer(){
 }
 
 void MainWindow::loadFile(){
-    QString entry = userInPath -> text();
+    /*QString entry = userInPath -> text();
     if (entry.length() != 0){
         fileInPath = entry;
         QFile filein(fileInPath);
         if (!filein.open(QIODevice::ReadOnly)) return;
         filebuffer = filein.readAll();
         updateFileBuffer();
-    }
+    }*/
+    QFile filein(fileInPath);
+    if (!filein.open(QIODevice::ReadOnly)) return;
+    filebuffer = filein.readAll();
+    //filebuffer = filein.read(6088572);
+    updateFileBuffer();
 
 }
 
@@ -66,18 +93,31 @@ void MainWindow::handleInsert(){
     QString entry = InstructionBox -> text();
     QString selection = MipsWindow->textCursor().QTextCursor::selectedText();
     QByteArray convReturn;
+    QByteArray revReturn;
     if (entry.length() != 0 and selection.length() != 0){
         ButtonInsert->setText("Inserting...");
         QString selectaddress = selection.left(8);
-        int numselectaddress = selectaddress.toInt(nullptr, 16);
+        int numselectaddress = selectaddress.toInt(nullptr, 16) - addressOffset;
 
         //convert entry to instruction. then convert each part of the instruction into an int and put thos into bytearrays. return the bytearrays
         //ex 10000001 00000000 00000000 00000001 -> 129 0 0 1 -> loop to convert each to bytearray then combine them
-        convReturn = convFromInst(entry);
-        MainWindow::filebuffer.insert(numselectaddress, convReturn);
-        updateFileBuffer();
-        ButtonInsert->setText("Inserted");
-        ButtonInsert->resize(100,30);
+        if (radioInst->isChecked()){
+            convReturn = convFromInst(entry);
+            MainWindow::filebuffer.insert(numselectaddress, convReturn);
+            updateFileBuffer();
+            ButtonInsert->setText("Inserted");
+            ButtonInsert->resize(100,30);
+        }
+        else {
+            convReturn = QByteArray::fromHex(entry.toUtf8());
+            for (int k = 0; k <4; ++k){
+                revReturn += convReturn.mid(3-k, 1);
+            }
+            MainWindow::filebuffer.insert(numselectaddress, revReturn);
+            updateFileBuffer();
+            ButtonInsert->setText("Inserted");
+            ButtonInsert->resize(100,30);
+        }
 
     }
 }
@@ -87,7 +127,7 @@ void MainWindow::handleDelete(){
     QString selection = MipsWindow->textCursor().QTextCursor::selectedText();
     qDebug() << selection;
     QString selectaddress = selection.left(8);
-    int numselectaddress = selectaddress.toInt(nullptr, 16);
+    int numselectaddress = selectaddress.toInt(nullptr, 16) - addressOffset;
     MainWindow::filebuffer.replace(numselectaddress, 4, "");
     updateFileBuffer();
 }

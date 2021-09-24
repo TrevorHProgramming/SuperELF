@@ -43,8 +43,17 @@ MainWindow::MainWindow(QWidget *parent)
     InstructionBox -> setGeometry(QRect(QPoint(440,50), QSize(300,30)));
     ButtonDelete = new QPushButton("Delete", this);
     ButtonDelete -> setGeometry(QRect(QPoint(540,90), QSize(100,30)));
+    radioHex = new QRadioButton("Hex view", this);
+    radioHex -> setGeometry(QRect(QPoint(440,120), QSize(100,30)));
+    radioInst = new QRadioButton("Instruction view", this);
+    radioInst -> setGeometry(QRect(QPoint(540,120), QSize(120,30)));
+    radioInst-> toggle();
+
+
     ButtonSettings = new QPushButton("Settings", this);
     ButtonSettings -> setGeometry(QRect(QPoint(540,190), QSize(100,30)));
+
+
     ButtonLoad = new QPushButton("Load", this);
     ButtonLoad -> setGeometry(QRect(QPoint(540,250), QSize(100,30)));
     ButtonExport = new QPushButton("Save", this);
