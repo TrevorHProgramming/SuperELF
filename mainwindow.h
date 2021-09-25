@@ -17,6 +17,7 @@
 #include <QBitArray>
 #include <QIODevice>
 #include <QRadioButton>
+#include <QFileDialog>
 
 #include <iostream>
 #include <stdio.h>
@@ -53,6 +54,8 @@ private slots:
     void scrollMips(int amount);
     void saveFile();
     void jumpAddress();
+    void loadModList();
+    void makeModList();
     QString convToInstruction(QString input);
     QString hex_to_bin(QByteArray arrhex);
     QByteArray convFromInst(QString instruction);
@@ -83,10 +86,6 @@ private:
     QByteArray WindowBuffer;
     QString addresslist[128];
     QString linelist[64];
-    QLabel *labelPathIn;
-    QLabel *labelPathOut;
-    QLineEdit *userInPath;
-    QLineEdit *userOutPath;
     QString fileInPath;
     QString fileOutPath;
     QPushButton ButtonUpdateSettings;

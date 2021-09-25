@@ -73,14 +73,6 @@ MainWindow::MainWindow(QWidget *parent)
     AddressBox -> setGeometry(QRect(QPoint(350,250), QSize(75,30)));
     ButtonAddress = new QPushButton("Jump", this);
     ButtonAddress -> setGeometry(QRect(QPoint(425,250), QSize(50,30)));
-    userInPath = new QLineEdit(this);
-    userInPath -> setGeometry(QRect(QPoint(500,350), QSize(180,30)));
-    userOutPath = new QLineEdit(this);
-    userOutPath -> setGeometry(QRect(QPoint(500,380), QSize(180,30)));
-    labelPathIn = new QLabel("Load file path: ", this);
-    labelPathIn -> setGeometry(QRect(QPoint(400,350), QSize(90,30)));
-    labelPathOut = new QLabel("Save file path: ", this);
-    labelPathOut -> setGeometry(QRect(QPoint(400,380), QSize(90,30)));
     connect(MipsWindow, &QTextBrowser::cursorPositionChanged, this, &MainWindow::handleSelect);
     connect(ButtonDelete, &QPushButton::released, this, &MainWindow::handleDelete);
     connect(ButtonInsert, &QPushButton::released, this, &MainWindow::handleInsert);

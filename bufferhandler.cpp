@@ -59,24 +59,19 @@ void MainWindow::updateWindowBuffer(){
 }
 
 void MainWindow::loadFile(){
-    /*QString entry = userInPath -> text();
+    QString entry = QFileDialog::getOpenFileName(this, tr("Select ELF"), QDir::currentPath(), tr("All Files (*.*)"));
     if (entry.length() != 0){
         fileInPath = entry;
         QFile filein(fileInPath);
         if (!filein.open(QIODevice::ReadOnly)) return;
         filebuffer = filein.readAll();
         updateFileBuffer();
-    }*/
-    QFile filein(fileInPath);
-    if (!filein.open(QIODevice::ReadOnly)) return;
-    filebuffer = filein.readAll();
-    //filebuffer = filein.read(6088572);
-    updateFileBuffer();
+    }
 
 }
 
 void MainWindow::saveFile(){
-    QString entry = userOutPath -> text();
+    QString entry = QFileDialog::getSaveFileName(this, tr("Save ELF"), QDir::currentPath(), tr("Binary File (*.bin)"));
     if (entry.length() != 0){
         fileOutPath = entry;
         QFile fileout(fileOutPath);
