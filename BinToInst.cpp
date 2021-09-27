@@ -1,14 +1,5 @@
 #include "mainwindow.h"
 
-QString reverse_input(QString input) {
-    QString pt1 = input.mid(0, 8);
-    QString pt2 = input.mid(8, 8);
-    QString pt3 = input.mid(16, 8);
-    QString pt4 = input.mid(24, 8);
-    QString output = pt4 + pt3 + pt2 + pt1;
-    return output;
-}
-
 QString GGR(int regIndex){
     //Get General Register
     QString retReg = genRegList[regIndex];
@@ -355,7 +346,7 @@ inline QString MMI_inst(int setlist[]) {
 
 QString MainWindow::convToInstruction(QString input) {
     //refer to page 370 of the EE core instruction manual
-    input = reverse_input(input);
+    input = reverse_input(input, 8);
     QString set1 = input.mid(0,6);
     QString set2 = input.mid(6,5);
     QString set3 = input.mid(11,5);

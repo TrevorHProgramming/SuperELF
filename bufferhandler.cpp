@@ -98,7 +98,7 @@ void MainWindow::handleInsert(){
         //ex 10000001 00000000 00000000 00000001 -> 129 0 0 1 -> loop to convert each to bytearray then combine them
         if (radioInst->isChecked()){
             convReturn = convFromInst(entry);
-            MainWindow::filebuffer.insert(numselectaddress, convReturn);
+            filebuffer.insert(numselectaddress, convReturn);
             updateFileBuffer();
             ButtonInsert->setText("Inserted");
             ButtonInsert->resize(100,30);
@@ -108,7 +108,7 @@ void MainWindow::handleInsert(){
             for (int k = 0; k <4; ++k){
                 revReturn += convReturn.mid(3-k, 1);
             }
-            MainWindow::filebuffer.insert(numselectaddress, revReturn);
+            filebuffer.insert(numselectaddress, revReturn);
             updateFileBuffer();
             ButtonInsert->setText("Inserted");
             ButtonInsert->resize(100,30);
@@ -123,6 +123,6 @@ void MainWindow::handleDelete(){
     qDebug() << selection;
     QString selectaddress = selection.left(8);
     int numselectaddress = selectaddress.toInt(nullptr, 16) - addressOffset;
-    MainWindow::filebuffer.replace(numselectaddress, 4, "");
+    filebuffer.replace(numselectaddress, 4, "");
     updateFileBuffer();
 }
