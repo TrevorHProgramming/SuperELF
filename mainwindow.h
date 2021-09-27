@@ -16,6 +16,10 @@
 #include <QDataStream>
 #include <QBitArray>
 #include <QIODevice>
+#include <QRadioButton>
+#include <QFileDialog>
+#include <QTableWidget>
+#include <QTableWidgetItem>
 
 #include <iostream>
 #include <stdio.h>
@@ -52,11 +56,20 @@ private slots:
     void scrollMips(int amount);
     void saveFile();
     void jumpAddress();
+    void loadModList();
+    void makeModList();
+    void checkTable(int row, int column);
+    QString reverse_input(QString input, int unitLength);
     QString convToInstruction(QString input);
     QString hex_to_bin(QByteArray arrhex);
     QByteArray convFromInst(QString instruction);
+    qint64 byteWrite( QFile& file, int8_t var );
+    qint64 shortWrite( QFile& file, int16_t var );
+    qint64 intWrite( QFile& file, int32_t var );
+    qint64 longWrite( QFile& file, int64_t var );
 
 private:
+    long long addressOffset;
     int BufferStart;
     Ui::MainWindow *ui;
 
@@ -81,13 +94,16 @@ private:
     QByteArray WindowBuffer;
     QString addresslist[128];
     QString linelist[64];
-    QLabel *labelPathIn;
-    QLabel *labelPathOut;
-    QLineEdit *userInPath;
-    QLineEdit *userOutPath;
     QString fileInPath;
     QString fileOutPath;
     QPushButton ButtonUpdateSettings;
+
+    QTableWidget *TableMods;
+    QPushButton *ButtonSaveMod;
+    QPushButton *ButtonLoadMods;
+
+    QRadioButton *radioInst;
+    QRadioButton *radioHex;
 };
 
 /*class SettingsWindow : public QWidget {

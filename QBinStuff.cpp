@@ -1,5 +1,16 @@
 #include "mainwindow.h"
 
+QString MainWindow::reverse_input(QString input, int unitLength) {
+    QString part;
+    QString output = "";
+    int bytes = int(input.length()/unitLength);
+    for (int i = bytes; i >= 0; --i){
+        part = input.mid(i*unitLength, unitLength);
+        output += part;
+    }
+    return output;
+}
+
 QString hex_char_to_bin(QChar c)
 {
     switch (c.toUpper().unicode())
@@ -34,4 +45,44 @@ QString MainWindow::hex_to_bin(QByteArray arrhex)
         bin += binhex;
     }
     return bin;
+}
+
+qint64 MainWindow::byteWrite( QFile& file, int8_t var ) {
+  qint64 toWrite = sizeof(decltype (var));
+  qint64  written = file.write(reinterpret_cast<const char*>(&var), toWrite);
+  if (written != toWrite) {
+    qDebug () << "write error";
+  }
+   //qDebug () << "out: " << written;
+  return written;
+}
+
+qint64 MainWindow::shortWrite( QFile& file, int16_t var ) {
+  qint64 toWrite = sizeof(decltype (var));
+  qint64 written = file.write(reinterpret_cast<const char*>(&var), toWrite);
+  if (written != toWrite) {
+    qDebug () << "write error";
+  }
+   //qDebug () << "out: " << written;
+  return written;
+}
+
+qint64 MainWindow::intWrite( QFile& file, int32_t var ) {
+  qint64 toWrite = sizeof(decltype (var));
+  qint64  written = file.write(reinterpret_cast<const char*>(&var), toWrite);
+  if (written != toWrite) {
+    qDebug () << "write error";
+  }
+   //qDebug () << "out: " << written;
+  return written;
+}
+
+qint64 MainWindow::longWrite( QFile& file, int64_t var ) {
+  qint64 toWrite = sizeof(decltype (var));
+  qint64  written = file.write(reinterpret_cast<const char*>(&var), toWrite);
+  if (written != toWrite) {
+    qDebug () << "write error";
+  }
+   //qDebug () << "out: " << written;
+  return written;
 }

@@ -14,7 +14,8 @@ SOURCES += \
     QBinStuff.cpp \
     bufferhandler.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    modhandler.cpp
 
 HEADERS += \
     mainwindow.h

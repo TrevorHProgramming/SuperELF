@@ -34,6 +34,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     int longScroll = 64;
     int shortScroll = 16;
+    addressOffset = 0;
 
     SettingsWindow = new QWidget();
 
@@ -43,12 +44,27 @@ MainWindow::MainWindow(QWidget *parent)
     InstructionBox -> setGeometry(QRect(QPoint(440,50), QSize(300,30)));
     ButtonDelete = new QPushButton("Delete", this);
     ButtonDelete -> setGeometry(QRect(QPoint(540,90), QSize(100,30)));
+    radioHex = new QRadioButton("Hex view", this);
+    radioHex -> setGeometry(QRect(QPoint(440,120), QSize(100,30)));
+    radioInst = new QRadioButton("Instruction view", this);
+    radioInst -> setGeometry(QRect(QPoint(540,120), QSize(120,30)));
+    radioInst-> toggle();
+
+
     ButtonSettings = new QPushButton("Settings", this);
     ButtonSettings -> setGeometry(QRect(QPoint(540,190), QSize(100,30)));
+
+
     ButtonLoad = new QPushButton("Load", this);
-    ButtonLoad -> setGeometry(QRect(QPoint(540,250), QSize(100,30)));
+    ButtonLoad -> setGeometry(QRect(QPoint(500,250), QSize(100,30)));
     ButtonExport = new QPushButton("Save", this);
-    ButtonExport -> setGeometry(QRect(QPoint(540,280), QSize(100,30)));
+    ButtonExport -> setGeometry(QRect(QPoint(500,280), QSize(100,30)));
+
+    ButtonLoadMods = new QPushButton("Load Mods", this);
+    ButtonLoadMods -> setGeometry(QRect(QPoint(610,250), QSize(100,30)));
+    ButtonSaveMod = new QPushButton("Save Mod", this);
+    ButtonSaveMod -> setGeometry(QRect(QPoint(610,280), QSize(100,30)));
+
     MipsWindow = new QTextBrowser(this);
     MipsWindow -> setGeometry(QRect(QPoint(50,50), QSize(300,500)));
     MipsWindow->setText(MipsBuffer);
@@ -64,14 +80,14 @@ MainWindow::MainWindow(QWidget *parent)
     AddressBox -> setGeometry(QRect(QPoint(350,250), QSize(75,30)));
     ButtonAddress = new QPushButton("Jump", this);
     ButtonAddress -> setGeometry(QRect(QPoint(425,250), QSize(50,30)));
-    userInPath = new QLineEdit(this);
-    userInPath -> setGeometry(QRect(QPoint(500,350), QSize(180,30)));
-    userOutPath = new QLineEdit(this);
-    userOutPath -> setGeometry(QRect(QPoint(500,380), QSize(180,30)));
-    labelPathIn = new QLabel("Load file path: ", this);
-    labelPathIn -> setGeometry(QRect(QPoint(400,350), QSize(90,30)));
-    labelPathOut = new QLabel("Save file path: ", this);
-    labelPathOut -> setGeometry(QRect(QPoint(400,380), QSize(90,30)));
+
+    TableMods = new QTableWidget(1, 2, this);
+    TableMods -> setGeometry(QRect(QPoint(400,350), QSize(225,180)));
+    QStringList columnNames = {"Address Start", "Address End"};
+    TableMods -> setHorizontalHeaderLabels(columnNames);
+
+    connect(TableMods, SIGNAL(cellChanged(int,int)), this, SLOT(checkTable(int,int)));
+
     connect(MipsWindow, &QTextBrowser::cursorPositionChanged, this, &MainWindow::handleSelect);
     connect(ButtonDelete, &QPushButton::released, this, &MainWindow::handleDelete);
     connect(ButtonInsert, &QPushButton::released, this, &MainWindow::handleInsert);
@@ -84,6 +100,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(Button1Up, &QPushButton::released, [this, shortScroll]{MainWindow::scrollMips(-shortScroll);});
     connect(Button1Down, &QPushButton::released, [this, shortScroll]{MainWindow::scrollMips(shortScroll);});
     connect(ButtonAddress, &QPushButton::released, this, &MainWindow::jumpAddress);
+
+    connect(ButtonSaveMod, &QPushButton::released, this, &MainWindow::makeModList);
+    connect(ButtonLoadMods, &QPushButton::released, this, &MainWindow::loadModList);
 }
 
 MainWindow::~MainWindow()
@@ -119,5 +138,15 @@ void MainWindow::jumpAddress(){
     }
     else {
         qDebug() << "Not a valid address.";
+    }
+}
+
+void MainWindow::checkTable(int row, int column){
+    //should probably check for a valid address here, give user an error on invalid, and clear the cell
+    //qDebug() << "row: " << row << " column " << column;
+    if (row+1 == TableMods->rowCount()){
+        if(column+1 == TableMods->columnCount()){
+            TableMods->insertRow(row+1);
+        }
     }
 }
