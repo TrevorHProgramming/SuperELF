@@ -1,4 +1,4 @@
-# MagicELF v0.3
+# MagicELF v0.4
 A PS2 .ELF Modding Tool
 
 Magic ELF (MELF) is a MIPS editor currently intended for use with Playstation 2 ELF files. MELF was made using QT libraries. 
@@ -17,6 +17,9 @@ MELF was designed using QT Creator 4.15, but should be buildable in any version 
   4. Because of the above, for each line of code you add, delete a line by selecting it in the code browser and clicking "Delete."
   5. When your changes are complete, hit "Save" and choose or create your output file. This can be the same as your input file if you want to overwrite it.
 
+<b>SAVING TO AN ISO</b>
+MELF can save your file directly to an ISO if it contains the original version of this ELF. The current version of MELF searches for the header information of the ELF file in the ISO and replaces it from that point forward. Later versions will find the specified ELF in the ISO's file directory, allowing you to make changes to any part of the file.
+
 <b>MAKING AND LOADING MODS</b>
 To create a mod:
 1. Make changes to the code in the browser as described above. 
@@ -34,5 +37,5 @@ To load mods:
 2. Add system to update all function and address references when adding or removing code.
 
 <b>PLANNED MINOR UPDATES</b>
-1. Improve the UI to be resizable, more akin to a full IDE. 
+1. Improve the UI to be resizable.
 2. Add a settings menu to keep preferences between sessions.
