@@ -20,6 +20,8 @@
 #include <QFileDialog>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QByteArrayMatcher>
+#include <QMessageBox>
 
 #include <iostream>
 #include <stdio.h>
@@ -44,21 +46,29 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    const static int hSize = 1024;
+    const static int vSize = 768;
 
 private slots:
     void handleInsert();
     void handleSelect();
     void handleSettings();
     void handleDelete();
+    void handleReplace();
     void updateFileBuffer();
     void updateWindowBuffer();
     void loadFile();
     void scrollMips(int amount);
     void saveFile();
+    void isoSearcher();
     void jumpAddress();
     void loadModList();
     void makeModList();
     void checkTable(int row, int column);
+    bool checkCompatibility(QStringList modFiles);
+    void findJJAL(long addressChanged, int linesAdded);
+    void findBranch(long addressChanged, int linesAdded);
+    bool checkBranch(QString input);
     QString reverse_input(QString input, int unitLength);
     QString convToInstruction(QString input);
     QString hex_to_bin(QByteArray arrhex);
@@ -70,13 +80,16 @@ private slots:
 
 private:
     long long addressOffset;
-    int BufferStart;
+    long long BufferStart;
     Ui::MainWindow *ui;
 
+    QLabel *LabelInstruction;
     QLineEdit *InstructionBox;
     QPushButton *ButtonInsert;
     QPushButton *ButtonDelete;
+    QPushButton *ButtonReplace;
 
+    QLabel *LabelAddress;
     QTextBrowser *MipsWindow;
     QString MipsBuffer;
     QPushButton *Button1Up;
@@ -98,9 +111,12 @@ private:
     QString fileOutPath;
     QPushButton ButtonUpdateSettings;
 
+    QLabel *LabelMods;
     QTableWidget *TableMods;
     QPushButton *ButtonSaveMod;
     QPushButton *ButtonLoadMods;
+    QPushButton *ButtonISO;
+    QMessageBox *MessagePopup;
 
     QRadioButton *radioInst;
     QRadioButton *radioHex;

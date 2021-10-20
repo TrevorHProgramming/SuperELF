@@ -30,67 +30,82 @@ MainWindow::MainWindow(QWidget *parent)
 {
     MipsBuffer = " ";
     BufferStart = 256;
+    int buttonHeight = 35;
+    int labelHeight = 15;
 
     ui->setupUi(this);
     int longScroll = 64;
     int shortScroll = 16;
-    addressOffset = 0;
+    addressOffset = 1048320;
 
     SettingsWindow = new QWidget();
 
-    ButtonInsert = new QPushButton("Insert", this);
-    ButtonInsert -> setGeometry(QRect(QPoint(440,90), QSize(100,30)));
+    MipsWindow = new QTextBrowser(this);
+    MipsWindow -> setGeometry(QRect(QPoint(int(hSize*.02),int(vSize*0.025)), QSize(int(hSize*0.38),int(vSize*0.95))));
+    MipsWindow->setText(MipsBuffer);
+
     InstructionBox = new QLineEdit(this);
-    InstructionBox -> setGeometry(QRect(QPoint(440,50), QSize(300,30)));
+    InstructionBox -> setGeometry(QRect(QPoint(int(hSize*.40),int(vSize*0.035) + labelHeight), QSize(int(hSize*0.35),buttonHeight)));
+    ButtonInsert = new QPushButton("Insert", this);
+    ButtonInsert -> setGeometry(QRect(QPoint(int(hSize*.40),int(vSize*0.045) + buttonHeight + labelHeight), QSize(int(hSize*.11),buttonHeight)));
     ButtonDelete = new QPushButton("Delete", this);
-    ButtonDelete -> setGeometry(QRect(QPoint(540,90), QSize(100,30)));
+    ButtonDelete -> setGeometry(QRect(QPoint(int(hSize*.52),int(vSize*0.045) + buttonHeight + labelHeight), QSize(int(hSize*.11),buttonHeight)));
+    ButtonReplace = new QPushButton("Replace", this);
+    ButtonReplace -> setGeometry(QRect(QPoint(int(hSize*.64),int(vSize*0.045) + buttonHeight + labelHeight), QSize(int(hSize*.11),buttonHeight)));
+    LabelInstruction = new QLabel("New Instruction:", this);
+    LabelInstruction->setGeometry(QRect(QPoint(int(hSize*.41),int(vSize*0.025)), QSize(int(hSize*0.11),labelHeight)));
+
     radioHex = new QRadioButton("Hex view", this);
-    radioHex -> setGeometry(QRect(QPoint(440,120), QSize(100,30)));
+    radioHex -> setGeometry(QRect(QPoint(int(hSize*0.45),int(vSize*0.045) + (buttonHeight*2) + labelHeight), QSize(int(hSize*0.12),buttonHeight)));
     radioInst = new QRadioButton("Instruction view", this);
-    radioInst -> setGeometry(QRect(QPoint(540,120), QSize(120,30)));
+    radioInst -> setGeometry(QRect(QPoint(int(hSize*0.58),int(vSize*0.045) + (buttonHeight*2) + labelHeight), QSize(int(hSize*0.17),buttonHeight)));
     radioInst-> toggle();
 
-
-    ButtonSettings = new QPushButton("Settings", this);
-    ButtonSettings -> setGeometry(QRect(QPoint(540,190), QSize(100,30)));
-
-
-    ButtonLoad = new QPushButton("Load", this);
-    ButtonLoad -> setGeometry(QRect(QPoint(500,250), QSize(100,30)));
-    ButtonExport = new QPushButton("Save", this);
-    ButtonExport -> setGeometry(QRect(QPoint(500,280), QSize(100,30)));
-
-    ButtonLoadMods = new QPushButton("Load Mods", this);
-    ButtonLoadMods -> setGeometry(QRect(QPoint(610,250), QSize(100,30)));
-    ButtonSaveMod = new QPushButton("Save Mod", this);
-    ButtonSaveMod -> setGeometry(QRect(QPoint(610,280), QSize(100,30)));
-
-    MipsWindow = new QTextBrowser(this);
-    MipsWindow -> setGeometry(QRect(QPoint(50,50), QSize(300,500)));
-    MipsWindow->setText(MipsBuffer);
+    LabelAddress = new QLabel("Jump to address:", this);
+    LabelAddress->setGeometry(QRect(QPoint(int(hSize*.45),250-labelHeight), QSize(int(hSize*0.11),labelHeight)));
     Button10Up = new QPushButton("^^", this);
-    Button10Up -> setGeometry(QRect(QPoint(350,190), QSize(30,30)));
+    Button10Up -> setGeometry(QRect(QPoint(int(hSize*.40),190), QSize(buttonHeight,buttonHeight)));
     Button10Down = new QPushButton("vv", this);
-    Button10Down -> setGeometry(QRect(QPoint(350,310), QSize(30,30)));
+    Button10Down -> setGeometry(QRect(QPoint(int(hSize*.40),310), QSize(buttonHeight,buttonHeight)));
     Button1Up = new QPushButton("^", this);
-    Button1Up -> setGeometry(QRect(QPoint(350,220), QSize(30,30)));
+    Button1Up -> setGeometry(QRect(QPoint(int(hSize*.40),220), QSize(buttonHeight,buttonHeight)));
     Button1Down = new QPushButton("v", this);
-    Button1Down -> setGeometry(QRect(QPoint(350,280), QSize(30,30)));
+    Button1Down -> setGeometry(QRect(QPoint(int(hSize*.40),280), QSize(buttonHeight,buttonHeight)));
     AddressBox = new QLineEdit(this);
-    AddressBox -> setGeometry(QRect(QPoint(350,250), QSize(75,30)));
+    AddressBox -> setGeometry(QRect(QPoint(int(hSize*.40),250), QSize(int(hSize*.11),buttonHeight)));
     ButtonAddress = new QPushButton("Jump", this);
-    ButtonAddress -> setGeometry(QRect(QPoint(425,250), QSize(50,30)));
+    ButtonAddress -> setGeometry(QRect(QPoint(int(hSize*.52),250), QSize(int(hSize*.11),buttonHeight)));
 
+    LabelMods = new QLabel("Modded Addresses:", this);
+    LabelMods->setGeometry(QRect(QPoint(int(hSize*.41),int(vSize*0.50)-labelHeight), QSize(int(hSize*0.11),labelHeight)));
     TableMods = new QTableWidget(1, 2, this);
-    TableMods -> setGeometry(QRect(QPoint(400,350), QSize(225,180)));
+    TableMods -> setGeometry(QRect(QPoint(int(hSize*.40),int(vSize*0.50)), QSize(int(hSize*.23),int(vSize*.475))));
     QStringList columnNames = {"Address Start", "Address End"};
     TableMods -> setHorizontalHeaderLabels(columnNames);
+
+    ButtonSettings = new QPushButton("Settings", this);
+    ButtonSettings -> setGeometry(QRect(QPoint(int(hSize*.73),360), QSize(int(hSize*.23),buttonHeight)));
+
+    ButtonLoad = new QPushButton("Load ELF", this);
+    ButtonLoad -> setGeometry(QRect(QPoint(int(hSize*.85),250), QSize(int(hSize*.11),buttonHeight)));
+    ButtonExport = new QPushButton("Save ELF", this);
+    ButtonExport -> setGeometry(QRect(QPoint(int(hSize*.73),250), QSize(int(hSize*.11),buttonHeight)));
+
+    ButtonLoadMods = new QPushButton("Load Mods", this);
+    ButtonLoadMods -> setGeometry(QRect(QPoint(int(hSize*.85),280), QSize(int(hSize*.11),buttonHeight)));
+    ButtonSaveMod = new QPushButton("Save Mod", this);
+    ButtonSaveMod -> setGeometry(QRect(QPoint(int(hSize*.73),280), QSize(int(hSize*.11),buttonHeight)));
+
+    ButtonISO = new QPushButton("Save ISO", this);
+    ButtonISO -> setGeometry(QRect(QPoint(int(hSize*.73),325), QSize(int(hSize*.23),buttonHeight)));
+    MessagePopup = new QMessageBox(this);
 
     connect(TableMods, SIGNAL(cellChanged(int,int)), this, SLOT(checkTable(int,int)));
 
     connect(MipsWindow, &QTextBrowser::cursorPositionChanged, this, &MainWindow::handleSelect);
     connect(ButtonDelete, &QPushButton::released, this, &MainWindow::handleDelete);
     connect(ButtonInsert, &QPushButton::released, this, &MainWindow::handleInsert);
+    connect(ButtonReplace, &QPushButton::released, this, &MainWindow::handleReplace);
     connect(ButtonSettings, &QPushButton::released, this, &MainWindow::handleSettings);
     connect(ButtonLoad, &QPushButton::released, this, &MainWindow::loadFile);
     connect(ButtonExport, &QPushButton::released, this, &MainWindow::saveFile);
@@ -103,6 +118,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ButtonSaveMod, &QPushButton::released, this, &MainWindow::makeModList);
     connect(ButtonLoadMods, &QPushButton::released, this, &MainWindow::loadModList);
+
+    connect(ButtonISO, &QPushButton::released, this, &MainWindow::isoSearcher);
 }
 
 MainWindow::~MainWindow()
@@ -132,12 +149,15 @@ void MainWindow::jumpAddress(){
     QString entry = AddressBox -> text();
     if (entry.length() != 0){
         QString jumpaddress = entry;
-        int numjumpaddress = jumpaddress.toInt(nullptr, 16);
+        long long numjumpaddress = jumpaddress.toLongLong(nullptr, 16) - addressOffset;
         BufferStart = numjumpaddress;
         updateFileBuffer();
     }
     else {
         qDebug() << "Not a valid address.";
+        MessagePopup->setText("Not a valid address.");
+        MessagePopup->setWindowTitle("Invalid Address!");
+        MessagePopup->open();
     }
 }
 
