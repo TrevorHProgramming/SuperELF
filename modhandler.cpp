@@ -55,10 +55,12 @@ bool MainWindow::checkCompatibility(QStringList modFiles){
                 for (int y = 0; y < int(modRanges[x].size()); y++){
                     //qDebug() << "Checking if " << modRanges[i][j][0] << " is greater than " << modRanges[x][y][0];
                     if(modRanges[i][j][0] >= modRanges[x][y][0] and modRanges[i][j][0] <= modRanges[x][y][1]){
+                        messageError("File " + modFiles.at(i) + " (section " + QString::number(j) + ") is incompatible with file " + modFiles.at(x) + " (section " + QString::number(y) + ")");
                         //qDebug() << "File " << modFiles.at(i) << " (section " << j << ") is incompatible with file " << modFiles.at(x) << " (section " << y << ")";
                         return false;
                     }
                     else if (modRanges[i][j][1] >= modRanges[x][y][0] and modRanges[i][j][1] <= modRanges[x][y][1]){
+                        messageError("File " + modFiles.at(i) + " (section " + QString::number(j) + ") is incompatible with file " + modFiles.at(x) + " (section " + QString::number(y) + ")");
                         //qDebug() << "File " << modFiles.at(i) << " (section " << j << ") is incompatible with file " << modFiles.at(x) << " (section " << y << ")";
                         return false;
                     }
