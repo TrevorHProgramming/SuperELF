@@ -55,7 +55,7 @@ void MainWindow::updateWindowBuffer(){
         MipsBuffer += addresslist[i];
         MipsBuffer += linelist[i];
     }
-    MipsWindow->setText(MipsBuffer);
+    MipsWindow->setPlainText(MipsBuffer);
 }
 
 void MainWindow::loadFile(){
@@ -81,16 +81,12 @@ void MainWindow::saveFile(){
         fileOutPath = entry;
         QFile fileout(fileOutPath);
         if(!fileout.open(QIODevice::WriteOnly)) {
-            MessagePopup->setText("Could not open file " + fileOutPath);
-            MessagePopup->setWindowTitle("File error!");
-            MessagePopup->open();
+            messageError("Could not open file " + fileOutPath);
             return;
         }
         fileout.write(filebuffer);
+        messageSuccess("ELF Saved.");
     }
-    MessagePopup->setText("ELF Saved.");
-    MessagePopup->setWindowTitle("Save complete");
-    MessagePopup->open();
 }
 
 void MainWindow::handleInsert(){
@@ -100,10 +96,11 @@ void MainWindow::handleInsert(){
     //step 4: update MipsWindow and clear entry
     QString entry = InstructionBox -> text();
     QString selection = MipsWindow->textCursor().QTextCursor::selectedText();
+    QTextCursor currentCursor(MipsWindow->textCursor());
+    int currentLine = currentCursor.position();
     QByteArray convReturn;
     QByteArray revReturn;
     if (entry.length() != 0 and selection.length() != 0){
-        ButtonInsert->setText("Inserting...");
         QString selectaddress = selection.left(8);
         int numselectaddress = selectaddress.toInt(nullptr, 16) - addressOffset;
 
@@ -113,8 +110,6 @@ void MainWindow::handleInsert(){
             convReturn = convFromInst(entry);
             filebuffer.insert(numselectaddress, convReturn);
             updateFileBuffer();
-            ButtonInsert->setText("Inserted");
-            ButtonInsert->resize(100,30);
         }
         else {
             convReturn = QByteArray::fromHex(entry.toUtf8());
@@ -123,30 +118,34 @@ void MainWindow::handleInsert(){
             }
             filebuffer.insert(numselectaddress, revReturn);
             updateFileBuffer();
-            ButtonInsert->setText("Inserted");
-            ButtonInsert->resize(100,30);
         }
-
+        currentCursor.setPosition(currentLine);
+        MipsWindow->setTextCursor(currentCursor);
     }
 }
 
 void MainWindow::handleDelete(){
     //get address of line and remove from buffer
     QString selection = MipsWindow->textCursor().QTextCursor::selectedText();
+    QTextCursor currentCursor(MipsWindow->textCursor());
+    int currentLine = currentCursor.position();
     qDebug() << selection;
     QString selectaddress = selection.left(8);
     int numselectaddress = selectaddress.toInt(nullptr, 16) - addressOffset;
     filebuffer.replace(numselectaddress, 4, "");
     updateFileBuffer();
+    currentCursor.setPosition(currentLine);
+    MipsWindow->setTextCursor(currentCursor);
 }
 
 void MainWindow::handleReplace(){
     QString entry = InstructionBox -> text();
     QString selection = MipsWindow->textCursor().QTextCursor::selectedText();
+    QTextCursor currentCursor(MipsWindow->textCursor());
+    int currentLine = currentCursor.position();
     QByteArray convReturn;
     QByteArray revReturn;
     if (entry.length() != 0 and selection.length() != 0){
-        ButtonReplace->setText("Replacing...");
         QString selectaddress = selection.left(8);
         int numselectaddress = selectaddress.toInt(nullptr, 16) - addressOffset;
         //convert entry to instruction. then convert each part of the instruction into an int and put those into bytearrays. return the bytearrays
@@ -157,15 +156,15 @@ void MainWindow::handleReplace(){
         }
         else {
             convReturn = QByteArray::fromHex(entry.toUtf8());
-            for (int k = 0; k <4; ++k){
+            /*for (int k = 0; k <4; ++k){
                 revReturn += convReturn.mid(3-k, 1);
-            }
+            }*/ //rmoving the reversal to make copying from IDA easier
             MainWindow::filebuffer.replace(numselectaddress, 4, revReturn);
         }
         updateFileBuffer();
-        ButtonReplace->setText("Inserted");
-        ButtonReplace->resize(100,30);
     }
+    currentCursor.setPosition(currentLine);
+    MipsWindow->setTextCursor(currentCursor);
 }
 
 QByteArray makeNullArray(int length){
@@ -195,16 +194,12 @@ void MainWindow::isoSearcher(){
     //if (!isoInFile){
     if(!isoInFile.open(QIODevice::ReadOnly)){
         qDebug() << "Could not open input iso";
-        MessagePopup->setText("Could not open input file " + isoInPath);
-        MessagePopup->setWindowTitle("File error!");
-        MessagePopup->open();
+        messageError("Could not open input file " + isoInPath);
         return;
     }
     if(!isoOutFile.open(QIODevice::WriteOnly)){
         qDebug() << "Could not open output iso";
-        MessagePopup->setText("Could not open output file " + isoOutPath);
-        MessagePopup->setWindowTitle("File error!");
-        MessagePopup->open();
+        messageError("Could not open input file " + isoOutPath);
         return;
     }
     uint32_t value;
@@ -217,18 +212,19 @@ void MainWindow::isoSearcher(){
     QByteArrayMatcher matcher(elfSearch);
     unsigned long long isoFileSize = isoInFile.size();
     qDebug() << "File size: " << isoFileSize;
+    qDebug() << "leftovers: " << leftoverBuffer;
     for(unsigned long long i = 0; i < (isoFileSize-bufferSize); i += bufferSize){
         isoInFile.seek(i);
         isoSearchBuffer = isoInFile.read(bufferSize);
         location = matcher.indexIn(isoSearchBuffer, 0);
         if (location != -1){
-            qDebug() << "Sequence found at: " << location << " with leftover: " << location%bufferSize;
+            //qDebug() << "Sequence found at: " << location << " with leftover: " << location%bufferSize;
             isoInFile.seek(i);
             isoSearchBuffer = isoInFile.read(location);
             isoOutFile.write(isoSearchBuffer);
             isoOutFile.write(filebuffer);
-            isoOutFile.write(makeNullArray(leftoverBuffer));
-            location += i + filebuffer.size() + leftoverBuffer;
+            //isoOutFile.write(makeNullArray(leftoverBuffer));
+            location += i + filebuffer.size();
             break;
             //i += isoSearchBuffer.size() + filebuffer.size();
         }
@@ -236,6 +232,7 @@ void MainWindow::isoSearcher(){
             isoOutFile.write(isoSearchBuffer);
         }
     }
+    qDebug() << "location: " << location;
     bufferSize = 1048576; //not looking for anything specific now, so increase the buffer size to speed things up
     for(unsigned long long i = location; i < isoFileSize; i += bufferSize){
         if (i < (isoFileSize-bufferSize)){
@@ -251,9 +248,7 @@ void MainWindow::isoSearcher(){
         }
 
     }
-    MessagePopup->setText("ISO Saved.");
-    MessagePopup->setWindowTitle("Save complete");
-    MessagePopup->open();
+    messageSuccess("ISO Saved.");
     qDebug() << "Done.";
 }
 

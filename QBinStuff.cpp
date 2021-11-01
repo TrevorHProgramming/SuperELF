@@ -1,5 +1,90 @@
 #include "mainwindow.h"
 
+QString MainWindow::signExtend(QString input, int length){
+    bool signBit;
+    QString output = input;
+    signBit = input.left(1).toInt();
+    if(input.length() < length){
+        if(signBit){
+            while(output.length() < length){
+                output = "1" + output;
+            }
+        } else {
+            while(output.length() < length){
+                output = "0" + output;
+            }
+        }
+    }
+    return output;
+}
+
+int MainWindow::twosCompConv(QString input, int length){
+    bool isSet;
+    bool signBit;
+    QString tempValue;
+    input = signExtend(input, length);
+    signBit = input.left(1).toInt();
+    if (signBit){
+        for(int i = input.length(); i >= 0 ; i--){
+            isSet = input.mid(i, 1).toInt();
+            if (isSet){
+                for(int j = 0; j < i; j++){
+                    if (input.mid(j, 1).toInt() == 1){
+                        tempValue += "0";
+                    }
+                    else {
+                        tempValue += "1";
+                    }
+                }
+                for(int j = i; j <= input.length(); j++){
+                    tempValue += input.mid(j, 1);
+                }
+                //qDebug() << "twos comp convert: " << input << " goes to " << tempValue << " " << tempValue.toInt(nullptr, 2);
+                return 0 - tempValue.toInt(nullptr, 2);
+            }
+        }
+        //qDebug() << "twos comp convert: no set bits found.";
+        return 0 - input.toInt(nullptr, 2);
+    }
+    return input.toInt(nullptr, 2);
+}
+
+QString MainWindow::twosCompConv(int intput, int length){
+    bool isSet;
+    bool signBit;
+    QString tempValue;
+    QString input = QStringLiteral("%1").arg(intput, length, 2, QLatin1Char('0'));
+    //QString input = QString::number(intput, 2);
+    input = signExtend(input, length);
+    signBit = input.left(1).toInt();
+    if (signBit){
+        for(int i = input.length(); i >= 0 ; i--){
+            isSet = input.mid(i, 1).toInt();
+            if (isSet){
+                for(int j = 0; j < i; j++){
+                    if (input.mid(j, 1).toInt() == 1){
+                        tempValue += "0";
+                    }
+                    else {
+                        tempValue += "1";
+                    }
+                }
+                for(int j = i; j <= input.length(); j++){
+                    tempValue += input.mid(j, 1);
+                }
+                //qDebug() << "twos comp convert: " << input << " goes to " << tempValue << " " << tempValue.toInt(nullptr, 2);
+                return "-0x" + QString::number(tempValue.toInt(nullptr, 2), 16);
+                //return QString::number(0 - tempValue.toInt(nullptr, 2));
+            }
+        }
+        //qDebug() << "twos comp convert: no set bits found.";
+        return "-0x" + QString::number(input.toInt(nullptr, 2), 16);
+        //return QString::number(0 - input.toInt(nullptr, 2));
+    }
+    return "0x" + QString::number(input.toInt(nullptr, 2), 16);
+    //return QString::number(input.toInt(nullptr, 2));
+}
+
 QString MainWindow::reverse_input(QString input, int unitLength) {
     QString part;
     QString output = "";

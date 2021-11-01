@@ -194,13 +194,15 @@ QByteArray MainWindow::convFromInst(QString instruction)
 
 
 
-    int IR[7] = {0,0,0,0,0,0,0}; //Instruction Return, default is NOP
+    long IR[7] = {0,0,0,0,0,0,0}; //Instruction Return, default is NOP
     int BL[7] = {0,0,0,0,0,0,0}; //Bit Length
-    uint16_t x = fI(II[0]); //Find instruction index
+    uint16_t x = fI(II[0].toUpper()); //Find instruction index
     uint16_t i0 = fID(x);
     uint16_t i1 = fG(II[1]);
     uint16_t i2 = fG(II[2]);
     uint16_t i3 = fG(II[3]);
+
+    uint32_t j0 = II[1].toInt(nullptr, 16) >> 2;
 
     /*CPU section needs to be reorganized to match the now-divided CPU instructions*/
     if (x == 0){
@@ -275,12 +277,24 @@ QByteArray MainWindow::convFromInst(QString instruction)
 
     } else if (x >= 84 && x <=105){
         qDebug() << i0 << " CPU STD i2m1	6 5 5 16 ";
-        IR[0] = i0, IR[1] = i1, IR[2] = i3, IR[3] = i2;
+        qDebug() << "load instruction or store instruction";
+        spacePos = II[2].indexOf("(");
+        II[3] = II[2].left(spacePos);
+        II[2] = II[2].right(spacePos+2);
+        qDebug() << "first pass II3: " << II[3] << " first pass II2: " << II[2];
+        spacePos = II[2].indexOf(")");
+        II[2] = II[2].left(spacePos);
+        qDebug() << "offset: " << II[3] << " register: " << II[2];
+        i3 = II[3].toInt(nullptr, 16);
+        i2 = fG(II[2]);
+        qDebug() << "offset converted: " << i3 << " register converted: " << i2;
+        IR[0] = i0, IR[1] = i2, IR[2] = i1, IR[3] = i3;
         BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
 
     } else if (x >= 106 && x <=107){
         qDebug() << i0 << " CPU STD im	6 26 ";
-        IR[0] = i0, IR[1] = i1;
+        qDebug() << "IR0: " << i0 << "IR1: " << j0;
+        IR[0] = i0, IR[1] = j0;
         BL[0] = 6, BL[1] = 26;
 
     } else if (x >= 108 && x <=109){
@@ -470,7 +484,6 @@ QByteArray MainWindow::convFromInst(QString instruction)
     for(int i = testReturn.size()-1;i>=0;--i){
         finalReturn.append(testReturn.at(i));
     }
-
     return finalReturn;
 }
 

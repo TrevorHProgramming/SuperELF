@@ -5,7 +5,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QListView>
-#include <QTextBrowser>
+#include <QPlainTextEdit>
 #include <QLabel>
 #include <QString>
 #include <QMouseEvent>
@@ -22,6 +22,8 @@
 #include <QTableWidgetItem>
 #include <QByteArrayMatcher>
 #include <QMessageBox>
+#include <QMenu>
+#include <QMenuBar>
 
 #include <iostream>
 #include <stdio.h>
@@ -68,10 +70,15 @@ private slots:
     bool checkCompatibility(QStringList modFiles);
     void findJJAL(long addressChanged, int linesAdded);
     void findBranch(long addressChanged, int linesAdded);
+    void messageError(QString message);
+    void messageSuccess(QString message);
     bool checkBranch(QString input);
     QString reverse_input(QString input, int unitLength);
     QString convToInstruction(QString input);
     QString hex_to_bin(QByteArray arrhex);
+    int twosCompConv(QString input, int length);
+    QString twosCompConv(int intput, int length);
+    QString signExtend(QString input, int length);
     QByteArray convFromInst(QString instruction);
     qint64 byteWrite( QFile& file, int8_t var );
     qint64 shortWrite( QFile& file, int16_t var );
@@ -82,6 +89,7 @@ private:
     long long addressOffset;
     long long BufferStart;
     Ui::MainWindow *ui;
+    QMenuBar *menuMain;
 
     QLabel *LabelInstruction;
     QLineEdit *InstructionBox;
@@ -90,7 +98,7 @@ private:
     QPushButton *ButtonReplace;
 
     QLabel *LabelAddress;
-    QTextBrowser *MipsWindow;
+    QPlainTextEdit *MipsWindow;
     QString MipsBuffer;
     QPushButton *Button1Up;
     QPushButton *Button10Up;
