@@ -16,11 +16,11 @@ SELF was designed using QT Creator 4.15, but should be buildable in any version 
   
     Instruction reg offset(base)
   
-  The Zero register will be recognized as "zero". <b> NOTE: </b> MELF does not currently support adding more lines to a given function than there were before. Doing so will break address references in both the code and data sections of your file. 
+  The Zero register will be recognized as "zero". <b> NOTE: </b> SELF does not currently support adding more lines to a given function than there were before. Doing so will break address references in both the code and data sections of your file. 
   
   4. Because of the above, for each line of code you add, delete a line by selecting it in the code browser and clicking "Delete."
   5. When your changes are complete, hit "Save" and choose or create your output file. This can be the same as your input file if you want to overwrite it.
-    5.5. If you want to save your changes directly to an ISO file, MELF can do this under some conditions:
+    5.5. If you want to save your changes directly to an ISO file, SELF can do this under some conditions:
       a. The header information for the edited ELF matches the original file in the ISO.
       b. The edited ELF is the same length as the file being replaced.
     I recognize that this isn't the most robust way to do this, but that's for a future update.
