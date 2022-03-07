@@ -7,7 +7,6 @@
 #include <QListView>
 #include <QPlainTextEdit>
 #include <QLabel>
-#include <QString>
 #include <QMouseEvent>
 #include <QTextCursor>
 #include <QTextDocumentFragment>
@@ -33,6 +32,11 @@
 #include <iomanip>
 #include <vector>
 
+#include "BinChanger.h"
+#include "MIPSReader.h"
+#include "BranchFinder.h"
+#include "ModManager.h"
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 namespace Ui { class MIPSBrowser; }
@@ -41,55 +45,21 @@ QT_END_NAMESPACE
 extern QString genRegList[];
 extern QString floatRegList[];
 
-class MainWindow : public QMainWindow
+class ProgWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    explicit ProgWindow(QWidget *parent = nullptr);
+    ~ProgWindow();
     const static int hSize = 1024;
     const static int vSize = 768;
-
-private slots:
-    void handleInsert();
-    void handleSelect();
-    void handleSettings();
-    void handleDelete();
-    void handleReplace();
-    void updateFileBuffer();
-    void updateWindowBuffer();
-    void loadFile();
-    void scrollMips(int amount);
-    void saveFile();
-    void isoSearcher();
-    void jumpAddress();
-    void loadModList();
-    void makeModList();
-    void checkTable(int row, int column);
-    bool checkCompatibility(QStringList modFiles);
-    void findJJAL(long addressChanged, int linesAdded);
-    void findBranch(long addressChanged, int linesAdded);
-    void messageError(QString message);
-    void messageSuccess(QString message);
-    bool checkBranch(QString input);
-    QString reverse_input(QString input, int unitLength);
-    QString convToInstruction(QString input);
-    QString hex_to_bin(QByteArray arrhex);
-    int twosCompConv(QString input, int length);
-    QString twosCompConv(int intput, int length);
-    QString signExtend(QString input, int length);
-    QByteArray convFromInst(QString instruction);
-    qint64 byteWrite( QFile& file, int8_t var );
-    qint64 shortWrite( QFile& file, int16_t var );
-    qint64 intWrite( QFile& file, int32_t var );
-    qint64 longWrite( QFile& file, int64_t var );
-
-private:
-    long long addressOffset;
-    long long BufferStart;
     Ui::MainWindow *ui;
     QMenuBar *menuMain;
+    MIPSReader *mainReader;
+    BranchFinder *branchFinder;
+    BinChanger *binChanger;
+    ModdedData *modList;
 
     QLabel *LabelInstruction;
     QLineEdit *InstructionBox;
@@ -99,7 +69,7 @@ private:
 
     QLabel *LabelAddress;
     QPlainTextEdit *MipsWindow;
-    QString MipsBuffer;
+
     QPushButton *Button1Up;
     QPushButton *Button10Up;
     QPushButton *Button1Down;
@@ -111,16 +81,8 @@ private:
     QWidget *SettingsWindow;
     QPushButton *ButtonLoad;
     QPushButton *ButtonExport;
-    QByteArray filebuffer;
-    QByteArray WindowBuffer;
-    QString addresslist[128];
-    QString linelist[64];
-    QString fileInPath;
-    QString fileOutPath;
     QPushButton ButtonUpdateSettings;
 
-    QLabel *LabelMods;
-    QTableWidget *TableMods;
     QPushButton *ButtonSaveMod;
     QPushButton *ButtonLoadMods;
     QPushButton *ButtonISO;
@@ -128,6 +90,21 @@ private:
 
     QRadioButton *radioInst;
     QRadioButton *radioHex;
+
+public slots:
+
+    void handleSelect();
+    void handleSettings();
+
+//    void loadModList();
+//    void makeModList();
+    void messageError(QString message);
+    void messageSuccess(QString message);
+
+    qint64 byteWrite( QFile& file, int8_t var );
+    qint64 shortWrite( QFile& file, int16_t var );
+    qint64 intWrite( QFile& file, int32_t var );
+    qint64 longWrite( QFile& file, int64_t var );
 };
 
 /*class SettingsWindow : public QWidget {

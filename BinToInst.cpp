@@ -1,18 +1,20 @@
 #include "mainwindow.h"
+#include "MIPSReader.h"
+#include "BinChanger.h"
 
-QString GGR(int regIndex){
+QString BinToInst::GGR(int regIndex){
     //Get General Register
     QString retReg = genRegList[regIndex];
     return retReg;
 }
 
-QString GFR(int regIndex){
+QString BinToInst::GFR(int regIndex){
     //Get Float Register
     QString retReg = floatRegList[regIndex];
     return retReg;
 }
 
-inline QString special_inst(int setlist[]) {
+inline QString BinToInst::special_inst(int setlist[]) {
     switch(setlist[5]){
         case 0: if(setlist[1] != 0 or setlist[2] != 0 or setlist[3] != 0){
             return "SLL " + GGR(setlist[3]) + ", " + GGR(setlist[2]) + ", 0x" + QString::number(setlist[4], 16);
@@ -73,7 +75,7 @@ inline QString special_inst(int setlist[]) {
     return "SPECIAL INSTRUCTION";
 }
 
-inline QString REGIMM_inst(int setlist[]) {
+inline QString BinToInst::REGIMM_inst(int setlist[]) {
     switch (setlist[2]) {
     case 0: return "BLTZ " + GGR(setlist[1]) + ", " + QString::number(setlist[6]);
     case 1: return "BGEZ " + GGR(setlist[1]) + ", " + QString::number(setlist[6]);
@@ -128,7 +130,7 @@ inline QString BC1_inst(int setlist[]) {
     return "COP1 - BC1 INSTRUCTION";
 }
 
-inline QString S_inst(int setlist[]) {
+inline QString BinToInst::S_inst(int setlist[]) {
     switch (setlist[5]) {
     case 0: return "ADD " + GFR(setlist[4]) + ", " + GFR(setlist[3]) + ", " + GFR(setlist[2]);
     case 1: return "SUB " + GFR(setlist[4]) + ", " + GFR(setlist[3]) + ", " + GFR(setlist[2]);
@@ -157,7 +159,7 @@ inline QString S_inst(int setlist[]) {
     return "COP1 - S INSTRUCTION";
 }
 
-inline QString MF0_inst(int setlist[]) {
+inline QString BinToInst::MF0_inst(int setlist[]) {
     switch (setlist[3]) {
         case 24:
         switch(setlist[8]){
@@ -179,7 +181,7 @@ inline QString MF0_inst(int setlist[]) {
     return "COP0 MF0 INSTRUCTION";
 }
 
-inline QString MT0_inst(int setlist[]) {
+inline QString BinToInst::MT0_inst(int setlist[]) {
     switch (setlist[3]) {
     case 24: switch(setlist[8]){
         case 0: return "MTBPC " + GGR(setlist[2]);
@@ -199,7 +201,7 @@ inline QString MT0_inst(int setlist[]) {
     return "COP0 MT0 INSTRUCTION";
 }
 
-inline QString COP0_inst(int setlist[]) {
+inline QString BinToInst::COP0_inst(int setlist[]) {
     switch (setlist[1]) {
     case 0: return MF0_inst(setlist);
     case 4: return MT0_inst(setlist);
@@ -209,7 +211,7 @@ inline QString COP0_inst(int setlist[]) {
     return "COP0 INSTRUCTION";
 }
 
-inline QString COP1_inst(int setlist[]) {
+inline QString BinToInst::COP1_inst(int setlist[]) {
     switch (setlist[1]) {
     case 0: return "MFC1 " + GGR(setlist[2]) + ", " + GFR(setlist[3]);
     case 2: return "CFC1 " + GGR(setlist[2]) + ", " + GFR(setlist[3]);
@@ -227,7 +229,7 @@ inline QString COP2_inst(int setlist[]) {
     return "VU INSTRUCTION";
 }
 
-inline QString MMI_inst(int setlist[]) {
+inline QString BinToInst::MMI_inst(int setlist[]) {
     switch (setlist[5]) {
         case 8: //"MMI0"
             switch(setlist[4]){
@@ -344,9 +346,9 @@ inline QString MMI_inst(int setlist[]) {
     return "MMI INSTRUCTION";
 }
 
-QString MainWindow::convToInstruction(QString input) {
+QString BinToInst::convToInstruction(QString input, ProgWindow& MainWindow) {
     //refer to page 370 of the EE core instruction manual
-    input = reverse_input(input, 8);
+    input = MainWindow.binChanger->reverse_input(input, 8);
     QString set1 = input.mid(0,6);
     QString set2 = input.mid(6,5);
     QString set3 = input.mid(11,5);
@@ -375,51 +377,51 @@ QString MainWindow::convToInstruction(QString input) {
     case 28: return MMI_inst(setlist);
     case 2: return "J " + QString::number(setlist[7], 16);
     case 3: return "JAL " + QString::number(setlist[7], 16);
-    case 4: return "BEQ " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + QString::number(setlist[6] << 2, 16);
-    case 5: return "BNE " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6] << 2, 16);
-    case 6: return "BLEZ " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6] << 2, 16);
-    case 7: return "BGTZ " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6] << 2, 16);
-    case 8: return "ADDI " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + twosCompConv(setlist[6], 16);
-    case 9: return "ADDIU " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + twosCompConv(setlist[6], 16);
-    case 10: return "SLTI " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + twosCompConv(setlist[6], 16);
-    case 11: return "SLTIU " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + twosCompConv(setlist[6], 16);
-    case 12: return "ANDI " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + twosCompConv(setlist[6], 16);
-    case 13: return "ORI " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + twosCompConv(setlist[6], 16);
-    case 14: return "XORI " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + twosCompConv(setlist[6], 16);
-    case 15: return "LUI " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16);
-    case 20: return "BEQL " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6] << 2, 16);
-    case 21: return "BNEL " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6] << 2, 16);
-    case 22: return "BLEZL " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6] << 2, 16);
-    case 23: return "BGTZL " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6] << 2, 16);
-    case 24: return "DADDI " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + twosCompConv(setlist[6], 16);
-    case 25: return "DADDIU " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + twosCompConv(setlist[6], 16);
-    case 26: return "LDL " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 27: return "LDR " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 30: return "LQ " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 31: return "SQ " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 32: return "LB " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 33: return "LH " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 34: return "LWL " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 35: return "LW " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 36: return "LBU " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 37: return "LHU " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 38: return "LWR " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 39: return "LWU " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 40: return "SB " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 41: return "SH " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 42: return "SWL " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 43: return "SW " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 44: return "SDL " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 45: return "SDR " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 46: return "SWR " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 4: return "BEQ " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6] << 2, 16);
+    case 5: return "BNE " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6] << 2, 16);
+    case 6: return "BLEZ " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6] << 2, 16);
+    case 7: return "BGTZ " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6] << 2, 16);
+    case 8: return "ADDI " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16);
+    case 9: return "ADDIU " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16);
+    case 10: return "SLTI " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16);
+    case 11: return "SLTIU " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16);
+    case 12: return "ANDI " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16);
+    case 13: return "ORI " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16);
+    case 14: return "XORI " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16);
+    case 15: return "LUI " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16);
+    case 20: return "BEQL " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6] << 2, 16);
+    case 21: return "BNEL " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6] << 2, 16);
+    case 22: return "BLEZL " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6] << 2, 16);
+    case 23: return "BGTZL " + GGR(setlist[1]) + ", " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6] << 2, 16);
+    case 24: return "DADDI " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16);
+    case 25: return "DADDIU " + GGR(setlist[2]) + ", " + GGR(setlist[1]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16);
+    case 26: return "LDL " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 27: return "LDR " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 30: return "LQ " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 31: return "SQ " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 32: return "LB " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 33: return "LH " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 34: return "LWL " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 35: return "LW " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 36: return "LBU " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 37: return "LHU " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 38: return "LWR " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 39: return "LWU " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 40: return "SB " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 41: return "SH " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 42: return "SWL " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 43: return "SW " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 44: return "SDL " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 45: return "SDR " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 46: return "SWR " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
     case 47: return "CACHE";
-    case 49: return "LWC1 " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 51: return "PREF " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 49: return "LWC1 " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 51: return "PREF " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
     case 54: return "LQC2";
-    case 55: return "LD " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
-    case 57: return "SWC1 " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 55: return "LD " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 57: return "SWC1 " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
     case 62: return "SQC2";
-    case 63: return "SD " + GGR(setlist[2]) + ", " + twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
+    case 63: return "SD " + GGR(setlist[2]) + ", " + MainWindow.binChanger->twosCompConv(setlist[6], 16) + "(" + GGR(setlist[1]) +")";
     default: return "UNKNOWN INSTRUCTION ";
     }
 }
