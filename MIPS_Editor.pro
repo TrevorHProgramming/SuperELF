@@ -9,15 +9,22 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    BinChanger.cpp \
     BinToInst.cpp \
+    BranchFinder.cpp \
     InstToBin.cpp \
-    QBinStuff.cpp \
-    bufferhandler.cpp \
+    MIPSReader.cpp \
+    ModManager.cpp \
     main.cpp \
-    mainwindow.cpp \
-    modhandler.cpp
+    mainwindow.cpp
 
 HEADERS += \
+    BinChanger.h \
+    BinToInst.h \
+    BranchFinder.h \
+    InstToBin.h \
+    MIPSReader.h \
+    ModManager.h \
     mainwindow.h
 
 FORMS += \

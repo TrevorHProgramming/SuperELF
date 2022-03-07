@@ -1,6 +1,6 @@
-#include "mainwindow.h"
+#include "BinChanger.h"
 
-QString MainWindow::signExtend(QString input, int length){
+QString BinChanger::signExtend(QString input, int length){
     bool signBit;
     QString output = input;
     signBit = input.left(1).toInt();
@@ -18,7 +18,23 @@ QString MainWindow::signExtend(QString input, int length){
     return output;
 }
 
-int MainWindow::twosCompConv(QString input, int length){
+QByteArray BinChanger::remakeImm(QString tempRead, long immediate){
+    QString replacement;
+    QByteArray replacementArray;
+    QString paddedImm;
+    tempRead = tempRead.mid(0,16); //get the unaltered part of the instruction
+    paddedImm = QString::number(immediate, 2); //get a binary string of the immediate
+    while (paddedImm.length()<16) {
+        paddedImm = "0"+paddedImm; //pad out to 16 bits. done differently for negative immediates. figure out a fix for that.
+    }
+    tempRead += paddedImm;
+    tempRead = reverse_input(tempRead,8); //reverse the whole instruction
+    replacement = QString("%1").arg(tempRead.toULong(nullptr,2),8,16,QChar('0')); //convert binary string into hex string
+    replacementArray = QByteArray::fromHex(replacement.toUtf8());
+    return replacementArray;
+}
+
+int BinChanger::twosCompConv(QString input, int length){
     bool isSet;
     bool signBit;
     QString tempValue;
@@ -49,7 +65,7 @@ int MainWindow::twosCompConv(QString input, int length){
     return input.toInt(nullptr, 2);
 }
 
-QString MainWindow::twosCompConv(int intput, int length){
+QString BinChanger::twosCompConv(int intput, int length){
     bool isSet;
     bool signBit;
     QString tempValue;
@@ -85,9 +101,20 @@ QString MainWindow::twosCompConv(int intput, int length){
     //return QString::number(input.toInt(nullptr, 2));
 }
 
-QString MainWindow::reverse_input(QString input, int unitLength) {
+QString BinChanger::reverse_input(QString input, int unitLength) {
     QString part;
     QString output = "";
+    int bytes = int(input.length()/unitLength);
+    for (int i = bytes; i >= 0; --i){
+        part = input.mid(i*unitLength, unitLength);
+        output += part;
+    }
+    return output;
+}
+
+QByteArray BinChanger::reverse_input(QByteArray input, int unitLength) {
+    QByteArray part;
+    QByteArray output = "";
     int bytes = int(input.length()/unitLength);
     for (int i = bytes; i >= 0; --i){
         part = input.mid(i*unitLength, unitLength);
@@ -120,7 +147,7 @@ QString hex_char_to_bin(QChar c)
     }
 }
 
-QString MainWindow::hex_to_bin(QByteArray arrhex)
+QString BinChanger::hex_to_bin(QByteArray arrhex)
 {
     QString hex = arrhex.toHex();
     unsigned long long hexlen = hex.length();
@@ -130,44 +157,4 @@ QString MainWindow::hex_to_bin(QByteArray arrhex)
         bin += binhex;
     }
     return bin;
-}
-
-qint64 MainWindow::byteWrite( QFile& file, int8_t var ) {
-  qint64 toWrite = sizeof(decltype (var));
-  qint64  written = file.write(reinterpret_cast<const char*>(&var), toWrite);
-  if (written != toWrite) {
-    qDebug () << "write error";
-  }
-   //qDebug () << "out: " << written;
-  return written;
-}
-
-qint64 MainWindow::shortWrite( QFile& file, int16_t var ) {
-  qint64 toWrite = sizeof(decltype (var));
-  qint64 written = file.write(reinterpret_cast<const char*>(&var), toWrite);
-  if (written != toWrite) {
-    qDebug () << "write error";
-  }
-   //qDebug () << "out: " << written;
-  return written;
-}
-
-qint64 MainWindow::intWrite( QFile& file, int32_t var ) {
-  qint64 toWrite = sizeof(decltype (var));
-  qint64  written = file.write(reinterpret_cast<const char*>(&var), toWrite);
-  if (written != toWrite) {
-    qDebug () << "write error";
-  }
-   //qDebug () << "out: " << written;
-  return written;
-}
-
-qint64 MainWindow::longWrite( QFile& file, int64_t var ) {
-  qint64 toWrite = sizeof(decltype (var));
-  qint64  written = file.write(reinterpret_cast<const char*>(&var), toWrite);
-  if (written != toWrite) {
-    qDebug () << "write error";
-  }
-   //qDebug () << "out: " << written;
-  return written;
 }

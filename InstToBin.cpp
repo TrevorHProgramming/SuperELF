@@ -21,7 +21,7 @@ QByteArray bitToByte(QBitArray bits) {
     return bytes;
 }
 
-int fI(QString seek) //Find Instruction
+int InstToBin::fI(QString seek) //Find Instruction
 {
     QString listOfInst[299] = {/*CPU Instructions 0-103*/
 
@@ -39,7 +39,8 @@ int fI(QString seek) //Find Instruction
                                /*i1     6 15 5 6    special*/ "SYNC.stype", "MFHI", "MFLO",
                                /*CPU Standard Instructions*/
                                /*i12m	6 5 5 16    normal*/ "BEQ", "BEQL", "BNE", "BNEL",
-                               /*i12m	6 5 5 16    normal, but different than the above*/"BGTZ", "BGTZL", "BLEZ", "BLEZL", "LUI",
+                               /*i12m	6 5 5 16    normal, but different than the above*/"BGTZ", "BGTZL", "BLEZ", "BLEZL",
+                               /*i12m	6 5 5 16    normal, but its own thing*/ "LUI",
                                /*i21m	6 5 5 16    normal*/ "ADDIU", "ANDI", "DADDI", "DADDIU", "ORI", "SLTI", "SLTIU", "XORI",
                                /*i2m1	6 5 5 16    normal*/ "LB", "LBU", "LD", "LDL", "LDR", "LH", "LHU", "LW", "LWL", "LWR", "LWU", "PREF", "SB", "SD", "SDL", "SDR", "SH", "SW", "SWL", "SWR", "LWC1", "SWC1",
                                /*im     6 26        normal*/ "J", "JAL",
@@ -95,7 +96,7 @@ int fI(QString seek) //Find Instruction
     return -1;
 }
 
-int fG(QString seek) //Find General Register
+int InstToBin::fG(QString seek) //Find General Register
 {
     QString listOfGenReg[32] = { "zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
                                  "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
@@ -108,7 +109,7 @@ int fG(QString seek) //Find General Register
     return -1;
 }
 
-int fF(QString seek) //Find Float Register
+int InstToBin::fF(QString seek) //Find Float Register
 {
     QString listOfFltReg[32] = { "f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7",
                                  "f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15",
@@ -121,7 +122,7 @@ int fF(QString seek) //Find Float Register
     return -1;
 }
 
-int fID(int seek){
+int InstToBin::fID(int seek){
     int listOfInstID[299] = {0,
                              1,17,19,3,0,16,18,2,12,8,9,10,11,14,24,25,
                              9,
@@ -179,7 +180,7 @@ int fID(int seek){
     return listOfInstID[seek];
 }
 
-QByteArray MainWindow::convFromInst(QString instruction)
+QByteArray InstToBin::convFromInst(QString instruction)
 {
     QString findInst = instruction;
     int spacePos;
@@ -257,21 +258,29 @@ QByteArray MainWindow::convFromInst(QString instruction)
 
     } else if (x >= 67 && x <=70){
         qDebug() << i0 << " CPU STD i12m	6 5 5 16 ";
+        qDebug() << "Branch instruction";
+        i3 = II[3].toInt(nullptr, 16) >> 2;
         IR[0] = i0, IR[1] = i1, IR[2] = i2, IR[3] = i3;
         BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
 
     } else if (x >= 71 && x <=74){
         qDebug() << i0 << " CPU STD i12m	6 5 5 16 ";
+        qDebug() << "Branch instruction";
+        i2 = II[2].toInt(nullptr, 16) >> 2;
         IR[0] = i0, IR[1] = i1, IR[2] = 0, IR[3] = i2;
         BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
 
     } else if (x ==75){
         qDebug() << i0 << " CPU STD i12m	6 5 5 16 ";
+        qDebug() << "LUI";
+        i2 = II[2].toInt(nullptr, 16);
         IR[0] = i0, IR[1] = 0, IR[2] = i1, IR[3] = i2;
         BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
 
     } else if (x >= 76 && x <=83){
         qDebug() << i0 << " CPU STD i21m	6 5 5 16 ";
+        qDebug() << "\"IU\" commands";
+        i3 = II[3].toInt(nullptr, 16);
         IR[0] = i0, IR[1] = i2, IR[2] = i1, IR[3] = i3;
         BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 16;
 
@@ -279,8 +288,9 @@ QByteArray MainWindow::convFromInst(QString instruction)
         qDebug() << i0 << " CPU STD i2m1	6 5 5 16 ";
         qDebug() << "load instruction or store instruction";
         spacePos = II[2].indexOf("(");
+        qDebug() << "before passes: " << II[2] << " and location: " << spacePos;
         II[3] = II[2].left(spacePos);
-        II[2] = II[2].right(spacePos+2);
+        II[2] = II[2].mid(spacePos+1, 2);
         qDebug() << "first pass II3: " << II[3] << " first pass II2: " << II[2];
         spacePos = II[2].indexOf(")");
         II[2] = II[2].left(spacePos);

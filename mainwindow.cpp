@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "MIPSReader.h"
 
 QString genRegList[] = {
     "$zero", "$at", "$v0", "$v1",
@@ -24,19 +25,27 @@ QString floatRegList[] = {
 };
 
 
-MainWindow::MainWindow(QWidget *parent)
+ProgWindow::ProgWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
-    MipsBuffer = " ";
-    BufferStart = 256;
+
+
     int buttonHeight = 35;
     int labelHeight = 15;
+
+    modList = new ModdedData;
+    branchFinder = new BranchFinder;
 
     ui->setupUi(this);
     int longScroll = 64;
     int shortScroll = 16;
-    addressOffset = 1048320;
+
+    //addressOffset = 542360; //hornet lineup
+    //addressOffset = 0;
+
+    mainReader = new MIPSReader();
+    mainReader->start(*mainReader);
 
     SettingsWindow = new QWidget();
 
@@ -55,7 +64,7 @@ MainWindow::MainWindow(QWidget *parent)
     MipsWindow = new QPlainTextEdit(this);
     MipsWindow -> setGeometry(QRect(QPoint(int(hSize*.02),int(vSize*0.055)), QSize(int(hSize*0.38),int(vSize*0.92))));
     MipsWindow->setReadOnly(true);
-    MipsWindow->setPlainText(MipsBuffer);
+    MipsWindow->setPlainText(mainReader->MipsBuffer);
 
     InstructionBox = new QLineEdit(this);
     InstructionBox -> setGeometry(QRect(QPoint(int(hSize*.40),int(vSize*0.065) + labelHeight), QSize(int(hSize*0.35),buttonHeight)));
@@ -89,13 +98,6 @@ MainWindow::MainWindow(QWidget *parent)
     ButtonAddress = new QPushButton("Jump", this);
     ButtonAddress -> setGeometry(QRect(QPoint(int(hSize*.52),250), QSize(int(hSize*.11),buttonHeight)));
 
-    LabelMods = new QLabel("Modded Addresses:", this);
-    LabelMods->setGeometry(QRect(QPoint(int(hSize*.41),int(vSize*0.53)-labelHeight), QSize(int(hSize*0.11),labelHeight)));
-    TableMods = new QTableWidget(1, 2, this);
-    TableMods -> setGeometry(QRect(QPoint(int(hSize*.40),int(vSize*0.53)), QSize(int(hSize*.23),int(vSize*.45))));
-    QStringList columnNames = {"Address Start", "Address End"};
-    TableMods -> setHorizontalHeaderLabels(columnNames);
-
     /*ButtonSettings = new QPushButton("Settings", this);
     ButtonSettings -> setGeometry(QRect(QPoint(int(hSize*.73),360), QSize(int(hSize*.23),buttonHeight)));
 
@@ -113,29 +115,34 @@ MainWindow::MainWindow(QWidget *parent)
     ButtonISO -> setGeometry(QRect(QPoint(int(hSize*.73),325), QSize(int(hSize*.23),buttonHeight)));*/
     MessagePopup = new QMessageBox(this);
 
-    connect(TableMods, SIGNAL(cellChanged(int,int)), this, SLOT(checkTable(int,int)));
+    connect(ButtonDelete, &QPushButton::released, [this] {mainReader->handleDelete(*this);});
+    connect(ButtonInsert, &QPushButton::released, [this] {mainReader->handleInsert(*this);});
+    connect(ButtonReplace, &QPushButton::released, [this] {mainReader->handleReplace(*this);});
+    connect(Button10Up, &QPushButton::released, [this, longScroll] {mainReader->scrollMIPS(-longScroll, *this);});
+    connect(Button10Down, &QPushButton::released, [this, longScroll] {mainReader->scrollMIPS(longScroll, *this);});
+    connect(Button1Up, &QPushButton::released, [this, shortScroll] {mainReader->scrollMIPS(-shortScroll, *this);});
+    connect(Button1Down, &QPushButton::released, [this, shortScroll] {mainReader->scrollMIPS(shortScroll, *this);});
 
-    connect(MipsWindow, &QPlainTextEdit::cursorPositionChanged, this, &MainWindow::handleSelect);
-    connect(ButtonDelete, &QPushButton::released, this, &MainWindow::handleDelete);
-    connect(ButtonInsert, &QPushButton::released, this, &MainWindow::handleInsert);
-    connect(ButtonReplace, &QPushButton::released, this, &MainWindow::handleReplace);
-    //connect(ButtonSettings, &QPushButton::released, this, &MainWindow::handleSettings);
-    //connect(ButtonLoad, &QPushButton::released, this, &MainWindow::loadFile);
-    //connect(ButtonExport, &QPushButton::released, this, &MainWindow::saveFile);
+//    connect(Button10Up, SIGNAL(QPushButton::released()), this, SLOT(mainReader.scrollMIPS(-longScroll)));
+//    connect(Button10Down, SIGNAL(QPushButton::released()), this, SLOT(mainReader.scrollMIPS(longScroll)));
+//    connect(Button1Up, SIGNAL(QPushButton::released()), this, SLOT(mainReader.scrollMIPS(-shortScroll)));
+//    connect(Button1Down, SIGNAL(QPushButton::released()), this, SLOT(mainReader.scrollMIPS(shortScroll)));
 
+    connect(ButtonAddress, &QPushButton::released, [this] {mainReader->jumpAddress(*this);});
+    //connect(ButtonAddress, SIGNAL(QPushButton::released()), this, SLOT(mainReader.jumpAddress(this)));
+    //connect(actionLoadELF, &QAction::triggered, this, [this] {mainReader->loadFile(*this->mainReader,*this);});
+    connect(actionLoadELF, &QAction::triggered, [this] {mainReader->loadFile(*this);});
+    connect(actionSaveELF, &QAction::triggered, [this] {mainReader->saveFile(*this);});
+    connect(actionSaveISO, &QAction::triggered, [this] {mainReader->isoSearcher(*this);});
 
-    connect(actionLoadELF, &QAction::triggered, this, &MainWindow::loadFile);
-    connect(actionSaveELF, &QAction::triggered, this, &MainWindow::saveFile);
-    connect(actionSaveISO, &QAction::triggered, this, &MainWindow::isoSearcher);
-    connect(actionLoadMod, &QAction::triggered, this, &MainWindow::loadModList);
-    connect(actionSaveMod, &QAction::triggered, this, &MainWindow::makeModList);
-    connect(actionSettings, &QAction::triggered, this, &MainWindow::handleSettings);
+    connect(MipsWindow, &QPlainTextEdit::cursorPositionChanged, this, &ProgWindow::handleSelect);
 
-    connect(Button10Up, &QPushButton::released, [this, longScroll]{MainWindow::scrollMips(-longScroll);});
-    connect(Button10Down, &QPushButton::released, [this, longScroll]{MainWindow::scrollMips(longScroll);});
-    connect(Button1Up, &QPushButton::released, [this, shortScroll]{MainWindow::scrollMips(-shortScroll);});
-    connect(Button1Down, &QPushButton::released, [this, shortScroll]{MainWindow::scrollMips(shortScroll);});
-    connect(ButtonAddress, &QPushButton::released, this, &MainWindow::jumpAddress);
+    connect(actionSaveMod, &QAction::triggered, [this] {modList->makeModList(*this);});
+    connect(actionLoadMod, &QAction::triggered, [this] {modList->loadModList(*this);});
+//    connect(actionLoadMod, &QAction::triggered, this, &ProgWindow::loadModList);
+//    connect(actionSaveMod, &QAction::triggered, this, &ProgWindow::makeModList);
+//    connect(actionSettings, &QAction::triggered, this, &ProgWindow::handleSettings);
+    //connect(actionLoadMod, &QAction::triggered, [this](){ProgWindow::handleOpen();});
 
     //connect(ButtonSaveMod, &QPushButton::released, this, &MainWindow::makeModList);
     //connect(ButtonLoadMods, &QPushButton::released, this, &MainWindow::loadModList);
@@ -143,12 +150,12 @@ MainWindow::MainWindow(QWidget *parent)
     //connect(ButtonISO, &QPushButton::released, this, &MainWindow::isoSearcher);
 }
 
-MainWindow::~MainWindow()
+ProgWindow::~ProgWindow()
 {
     delete ui;
 }
 
-void MainWindow::handleSelect(){
+void ProgWindow::handleSelect(){
     //selects a line of text.
     if (MipsWindow->textCursor().atBlockEnd() == false){
         MipsWindow->moveCursor(QTextCursor::StartOfLine);
@@ -156,47 +163,18 @@ void MainWindow::handleSelect(){
     }
 }
 
-void MainWindow::handleSettings(){
+void ProgWindow::handleSettings(){
     //open a settings window
     SettingsWindow->show();
 }
 
-void MainWindow::scrollMips(int amount){
-    BufferStart += amount;
-    MainWindow::updateFileBuffer();
-}
-
-void MainWindow::jumpAddress(){
-    QString entry = AddressBox -> text();
-    if (entry.length() != 0){
-        QString jumpaddress = entry;
-        long long numjumpaddress = jumpaddress.toLongLong(nullptr, 16) - addressOffset;
-        BufferStart = numjumpaddress;
-        updateFileBuffer();
-    }
-    else {
-        qDebug() << "Not a valid address.";
-        messageError("Not a valid address.");
-    }
-}
-
-void MainWindow::checkTable(int row, int column){
-    //should probably check for a valid address here, give user an error on invalid, and clear the cell
-    //qDebug() << "row: " << row << " column " << column;
-    if (row+1 == TableMods->rowCount()){
-        if(column+1 == TableMods->columnCount()){
-            TableMods->insertRow(row+1);
-        }
-    }
-}
-
-void MainWindow::messageError(QString message){
+void ProgWindow::messageError(QString message){
     MessagePopup->setText(message);
     MessagePopup->setWindowTitle("Error!");
     MessagePopup->open();
 }
 
-void MainWindow::messageSuccess(QString message){
+void ProgWindow::messageSuccess(QString message){
     MessagePopup->setText(message);
     MessagePopup->setWindowTitle("Success.");
     MessagePopup->open();
