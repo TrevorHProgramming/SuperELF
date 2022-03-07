@@ -1,10 +1,10 @@
-# MagicELF v0.45
+# SuperELF v0.5
 A PS2 .ELF Modding Tool
 
-Magic ELF (MELF) is a MIPS editor currently intended for use with Playstation 2 ELF files. MELF was made using QT libraries. 
+Super ELF (SELF) is a MIPS editor currently intended for use with Playstation 2 ELF files. SELF was made using QT libraries. 
 
 <b>HOW TO USE</b>
-MELF was designed using QT Creator 4.15, but should be buildable in any version from 4.15 onward. 
+SELF was designed using QT Creator 4.15, but should be buildable in any version from 4.15 onward. 
 
   1. Hit "Load," select a file, and the code should be visible in the main box to the left.
   2. Scroll through the code and find the section you plan to change.
@@ -28,9 +28,8 @@ MELF was designed using QT Creator 4.15, but should be buildable in any version 
 <b>MAKING AND LOADING MODS</b>
 To create a mod:
 1. Make changes to the code in the browser as described above. 
-2. Enter the address of the earliest line changed in the first column of the table in the bottom right and the address of the last line changed in the second column.
-3. Multiple address ranges can be used, so if changes are made in multiple areas of the code, you can split them up as needed. This will make the mod file smaller and increase compatibility with other mods.
-4. Click "Save Mod," then name and create your output file.
+2. Click "Save Mod," then name and create your output file.
+NOTE: A mod can't add/remove lines from the file, or any individual function, that changes its length. Address references currently don't update. 
 
 To load mods:
 1. Load the ELF you plan to modify.
@@ -43,4 +42,4 @@ To load mods:
 
 <b>PLANNED MINOR UPDATES</b>
 1. Improve the UI to be resizable.
-2. Add a settings menu to keep preferences between sessions.
+2. Add a settings menu to keep preferences between sessions. Settings are currently hardcoded. 
