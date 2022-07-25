@@ -85,19 +85,19 @@ bool ModdedData::checkCompatibility(QStringList modFiles, ProgWindow& MainWindow
         QFile currentMod(modFiles.at(i));
         if (currentMod.open(QIODevice::ReadOnly)){
             modBuffer = currentMod.readAll();
-            modType = MainWindow.binChanger->reverse_input(modBuffer.mid(0, 1).toHex(), 2).toInt(nullptr, 16);
+            modType = MainWindow.binChanger.reverse_input(modBuffer.mid(0, 1).toHex(), 2).toInt(nullptr, 16);
             if (modType & (modFiles.size()>1)){
                 MainWindow.messageError("File " + modFiles.at(i) + " is a Type 1 mod, which is incompatible with other mods.");
                 return false;
             }
-            modSections = MainWindow.binChanger->reverse_input(modBuffer.mid(1, 4).toHex(), 2).toInt(nullptr, 16);
+            modSections = MainWindow.binChanger.reverse_input(modBuffer.mid(1, 4).toHex(), 2).toInt(nullptr, 16);
             currentRead += 5;
             //qDebug() << "mod sections for " << i <<": " << modSections;
             modRanges[i].resize(modSections);
             for (int j = 0; j < modSections; j++){
-                startAddress = MainWindow.binChanger->reverse_input(modBuffer.mid(currentRead,8).toHex(), 2).toLong(nullptr, 16);
+                startAddress = MainWindow.binChanger.reverse_input(modBuffer.mid(currentRead,8).toHex(), 2).toLong(nullptr, 16);
                 currentRead += 8;
-                modLines = MainWindow.binChanger->reverse_input(modBuffer.mid(currentRead, 4).toHex(), 2).toInt(nullptr, 16);
+                modLines = MainWindow.binChanger.reverse_input(modBuffer.mid(currentRead, 4).toHex(), 2).toInt(nullptr, 16);
                 currentRead += (5*modLines)+4; //+4 to include itself, * 5 since each modline is 4 byte code + 1 byte type
                 endAddress = startAddress + (modLines*4);
                 qDebug() << "addresses for file " << i << " section " << j << " are: " << startAddress << " to " << endAddress;
@@ -166,13 +166,13 @@ void ModdedData::loadModList(ProgWindow& MainWindow){
             if (currentMod.open(QIODevice::ReadOnly)){
                 modBuffer = currentMod.readAll();
                 //not reading the mod type since that's only relevant to the compatibility check
-                modSections = MainWindow.binChanger->reverse_input(modBuffer.mid(1, 4).toHex(), 2).toInt(nullptr, 16);
+                modSections = MainWindow.binChanger.reverse_input(modBuffer.mid(1, 4).toHex(), 2).toInt(nullptr, 16);
                 currentRead += 4;
                 //qDebug() << "mod sections " << modSections;
                 for (int j = 0; j < modSections; j++){
-                    startAddress = MainWindow.binChanger->reverse_input(modBuffer.mid(currentRead,8).toHex(), 2).toLong(nullptr, 16);
+                    startAddress = MainWindow.binChanger.reverse_input(modBuffer.mid(currentRead,8).toHex(), 2).toLong(nullptr, 16);
                     currentRead += 8;
-                    modLines = MainWindow.binChanger->reverse_input(modBuffer.mid(currentRead, 4).toHex(), 2).toInt(nullptr, 16);
+                    modLines = MainWindow.binChanger.reverse_input(modBuffer.mid(currentRead, 4).toHex(), 2).toInt(nullptr, 16);
                     currentRead += 4;
                     //qDebug() << "start address for section " << j << " is: " << startAddress << " with " << modLines << " modded line(s).";
                     for (int k = 0; k < modLines; k++){

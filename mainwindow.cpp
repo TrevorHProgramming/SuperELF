@@ -171,11 +171,11 @@ void ProgWindow::handleSettings(){
 void ProgWindow::messageError(QString message){
     MessagePopup->setText(message);
     MessagePopup->setWindowTitle("Error!");
-    MessagePopup->open();
+    MessagePopup->exec();
 }
 
 void ProgWindow::messageSuccess(QString message){
     MessagePopup->setText(message);
     MessagePopup->setWindowTitle("Success.");
-    MessagePopup->open();
+    MessagePopup->exec();
 }
