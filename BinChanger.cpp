@@ -1,4 +1,56 @@
-#include "BinChanger.h"
+#include "mainwindow.h"
+
+long FileData::readLong(int length, long location){
+    long readValue = parent->binChanger.reverse_input(parent->fileData.dataBytes.mid(currentPosition + location, length).toHex(),2).toLong(nullptr, 16);
+    currentPosition += length;
+    return readValue;
+}
+
+int FileData::readInt(int length, long location){
+    int readValue = parent->binChanger.reverse_input(parent->fileData.dataBytes.mid(currentPosition + location, length).toHex(),2).toInt(nullptr, 16);
+    currentPosition += length;
+    return readValue;
+}
+
+int FileData::readUInt(int length, long location){
+    int readValue = parent->binChanger.reverse_input(parent->fileData.dataBytes.mid(currentPosition + location, length).toHex(),2).toUInt(nullptr, 16);
+    currentPosition += length;
+    return readValue;
+}
+
+bool FileData::readBool(int length, long location){
+    bool readValue = parent->fileData.dataBytes.mid(currentPosition + location, length).toHex().toInt(nullptr, 16);
+    currentPosition += length;
+    return readValue;
+}
+
+float FileData::readFloat(int length, long location){
+    float readValue = parent->binChanger.hex_to_float(parent->binChanger.reverse_input(parent->fileData.dataBytes.mid(currentPosition + location, length).toHex(), 2));
+    currentPosition += length;
+    return readValue;
+}
+
+QByteArray FileData::readHex(int length, long location){
+    QByteArray readValue = dataBytes.mid(currentPosition + location, length);
+    currentPosition += length;
+    return readValue;
+}
+
+QByteArray FileData::mid(long location, int length){
+    QByteArray readValue = dataBytes.mid(location, length);
+    currentPosition += length;
+    return readValue;
+}
+
+void FileData::readFile(QString filePath){
+    dataBytes.clear();
+
+    QFile inputFile(filePath);
+    inputFile.open(QIODevice::ReadOnly);
+    dataBytes = inputFile.readAll();
+    qDebug() << Q_FUNC_INFO << "file data read length:" << dataBytes.size();
+    currentPosition = 0;
+}
 
 QString BinChanger::signExtend(QString input, int length){
     bool signBit;
@@ -157,4 +209,30 @@ QString BinChanger::hex_to_bin(QByteArray arrhex)
         bin += binhex;
     }
     return bin;
+}
+
+float BinChanger::hex_to_float(QByteArray array){
+    bool ok;
+    int sign = 1;
+    long long zeroCheck = 0;
+    zeroCheck = array.toLongLong(nullptr, 16);
+    //qDebug() << Q_FUNC_INFO << "Starting array: " << array;
+    //qDebug() << Q_FUNC_INFO << "zerocheck: " << zeroCheck << " for array: " << array;
+    if (zeroCheck == 0){
+        return 0;
+    }
+    array = QByteArray::number(array.toLongLong(&ok,16),2); //convert hex to binary
+    if(array.length()==32) {
+        if(array.at(0)=='1')  sign =-1;                       // if bit 0 is 1 number is negative
+        array.remove(0,1);                                     // remove sign bit
+    }
+    QByteArray fraction =array.right(23);   //get the fractional part
+    double mantissa = 0;
+    for(int i=0;i<fraction.length();i++)     // iterate through the array to claculate the fraction as a decimal.
+        if(fraction.at(i)=='1')     mantissa += 1.0/(pow(2,i+1));
+    int exponent = array.left(array.length()-23).toLongLong(&ok,2);
+    //qDebug() << Q_FUNC_INFO << "binary read: " << QString(array.left(array.length()-23)) << "exponent: " << exponent;
+    exponent -= 127;     //claculate the exponent
+    //qDebug() << Q_FUNC_INFO << "number= "<< QString::number( sign*pow(2,exponent)*(mantissa+1.0),'f', 5 );
+    return sign*pow(2,exponent)*(mantissa+1.0);
 }

@@ -36,7 +36,8 @@ int InstToBin::fI(QString seek) //Find Instruction
                                /*i12	6 5 5 10 6  special*/ "MULT", "MULTU", "TEQ", "TGE", "TGEU", "TLT", "TLTU", "TNE", "DIV", "DIVU",
                                /*i1     6 5 15 6    special*/ "JR", "MTHI", "MTLO",
                                /*i		6 20 6      special*/ "BREAK", "SYSCALL",
-                               /*i1     6 15 5 6    special*/ "SYNC.stype", "MFHI", "MFLO",
+                               /*SYNC*/ "SYNC",
+                               /*i1     6 15 5 6    special*/"MFHI", "MFLO",
                                /*CPU Standard Instructions*/
                                /*i12m	6 5 5 16    normal*/ "BEQ", "BEQL", "BNE", "BNEL",
                                /*i12m	6 5 5 16    normal, but different than the above*/"BGTZ", "BGTZL", "BLEZ", "BLEZL",
@@ -191,8 +192,8 @@ QByteArray InstToBin::convFromInst(QString instruction)
         spacePos = findInst.indexOf(" ");
         II[i] = findInst.left(spacePos);
         findInst = findInst.mid(spacePos+1, instLength);
+        qDebug() << Q_FUNC_INFO << "modsplit: II[" << i <<"]:" << II[i];
     }
-
 
 
     long IR[7] = {0,0,0,0,0,0,0}; //Instruction Return, default is NOP
@@ -223,7 +224,8 @@ QByteArray InstToBin::convFromInst(QString instruction)
 
     } else if (x >= 18 && x <=26){
         qDebug() << i0 << " CPU SPEC i213	6 5 5 5 5 6 ";
-        IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
+        //IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = i3, IR[5] = i0;
+        IR[0] = 0, IR[1] = 0, IR[2] = i2, IR[3] = i1, IR[4] = II[3].toInt(nullptr), IR[5] = i0;
         BL[0] = 6, BL[1] = 5, BL[2] = 5, BL[3] = 5, BL[4] = 5, BL[5] = 6;
 
     } else if (x >= 27 && x <=42){
@@ -251,9 +253,14 @@ QByteArray InstToBin::convFromInst(QString instruction)
         IR[0] = 0, IR[1] = i1, IR[2] = i0;
         BL[0] = 6, BL[1] = 20, BL[2] = 6;
 
-    } else if (x >= 64 && x <=66){
+    } else if (x == 64){
+        qDebug() << i0 << " CPU SPEC SYNC ";
+        IR[0] = 0, IR[1] = 0, IR[2] = II[1].toInt(nullptr), IR[3] = i0;
+        BL[0] = 6, BL[1] = 15, BL[2] = 5, BL[3] = 6;
+
+    } else if (x >= 65 && x <=66){
         qDebug() << i0 << " CPU SPEC i1	6 15 5 6 ";
-        IR[0] = 0, IR[1] = 0, IR[2] = i1, IR[3] = i0;
+        IR[0] = 0, IR[1] = 0, IR[2] = i0, IR[3] = i0;
         BL[0] = 6, BL[1] = 15, BL[2] = 5, BL[3] = 6;
 
     } else if (x >= 67 && x <=70){

@@ -27,7 +27,7 @@ void MIPSReader::updateFileBuffer(ProgWindow& MainWindow){
             addresslist[j] = QString::number(BufferNow + addressOffset, 16).rightJustified(8, '0');
             temp = " | ";
             //actual code will translate here and append to line
-            realInst = MainWindow.binChanger->hex_to_bin(WindowBuffer.mid(i,4));
+            realInst = MainWindow.binChanger.hex_to_bin(WindowBuffer.mid(i,4));
             temp += binToInst->convToInstruction(realInst, MainWindow);
             temp += '\n';
 
@@ -177,7 +177,7 @@ void MIPSReader::handleDelete(ProgWindow& MainWindow){
     MainWindow.modList->adjustAddresses(*MainWindow.modList, modLine.address, modLine.lineType);
     MainWindow.modList->modLineList.append(modLine);
 
-    //qDebug() << MainWindow.binChanger->reverse_input(MainWindow.binChanger->hex_to_bin(filebuffer.mid(numselectaddress, 4)), 8);
+    //qDebug() << MainWindow.binChanger.reverse_input(MainWindow.binChanger.hex_to_bin(filebuffer.mid(numselectaddress, 4)), 8);
     filebuffer.replace(numselectaddress, 4, "");
     updateFileBuffer(MainWindow);
     currentCursor.setPosition(currentLine);

@@ -58,7 +58,7 @@ public:
     QMenuBar *menuMain;
     MIPSReader *mainReader;
     BranchFinder *branchFinder;
-    BinChanger *binChanger;
+    BinChanger binChanger;
     ModdedData *modList;
 
     QLabel *LabelInstruction;
@@ -69,6 +69,7 @@ public:
 
     QLabel *LabelAddress;
     QPlainTextEdit *MipsWindow;
+    FileData fileData;
 
     QPushButton *Button1Up;
     QPushButton *Button10Up;
