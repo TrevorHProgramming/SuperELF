@@ -204,7 +204,7 @@ void ModdedData::loadModList(ProgWindow& MainWindow){
     else {
         qDebug() << "Compatibility check failed";
     }
-    MainWindow.mainReader->updateFileBuffer(MainWindow);
+    MainWindow.mainReader->updateFileBuffer();
 }
 
 //for making new mod files:

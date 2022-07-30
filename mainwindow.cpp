@@ -24,12 +24,21 @@ QString floatRegList[] = {
     "$f28", "$f29", "$f30", "$f31"
 };
 
+SettingsWindow::~SettingsWindow()
+{
+    delete sendUpdate;
+}
 
 ProgWindow::ProgWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
 
+    setW = new SettingsWindow(this);
+    loadSettings();
+    int longScroll = setW->settingsValues[4].toInt(nullptr)*4;
+    int shortScroll = setW->settingsValues[5].toInt(nullptr)*4;
+    mainReader = new MIPSReader(this);
 
     int buttonHeight = 35;
     int labelHeight = 15;
@@ -38,16 +47,10 @@ ProgWindow::ProgWindow(QWidget *parent)
     branchFinder = new BranchFinder;
 
     ui->setupUi(this);
-    int longScroll = 64;
-    int shortScroll = 16;
 
     //addressOffset = 542360; //hornet lineup
     //addressOffset = 0;
 
-    mainReader = new MIPSReader();
-    mainReader->start(*mainReader);
-
-    SettingsWindow = new QWidget();
 
     menuMain = new QMenuBar(this);
     menuMain->setGeometry(QRect(QPoint(int(hSize*0),int(vSize*0)), QSize(int(hSize*1),int(vSize*0.03))));
@@ -61,10 +64,12 @@ ProgWindow::ProgWindow(QWidget *parent)
     QAction *actionSaveMod = menuMods ->addAction("Save Mods");
     QAction *actionSettings = menuSettings -> addAction("Settings");
 
-    MipsWindow = new QPlainTextEdit(this);
-    MipsWindow -> setGeometry(QRect(QPoint(int(hSize*.02),int(vSize*0.055)), QSize(int(hSize*0.38),int(vSize*0.92))));
-    MipsWindow->setReadOnly(true);
-    MipsWindow->setPlainText(mainReader->MipsBuffer);
+    MipsList = new QListWidget(this);
+    MipsList->setUniformItemSizes(true);
+    MipsList -> setGeometry(QRect(QPoint(int(hSize*.02),int(vSize*0.055)), QSize(int(hSize*0.38),int(vSize*0.92))));
+
+    //MipsTable = new QTableWidget(this);
+    //MipsTable->setGeometry(QRect(QPoint(int(hSize*.43),int(vSize*0.055)), QSize(int(hSize*0.38),int(vSize*0.92))));
 
     InstructionBox = new QLineEdit(this);
     InstructionBox -> setGeometry(QRect(QPoint(int(hSize*.40),int(vSize*0.065) + labelHeight), QSize(int(hSize*0.35),buttonHeight)));
@@ -98,56 +103,24 @@ ProgWindow::ProgWindow(QWidget *parent)
     ButtonAddress = new QPushButton("Jump", this);
     ButtonAddress -> setGeometry(QRect(QPoint(int(hSize*.52),250), QSize(int(hSize*.11),buttonHeight)));
 
-    /*ButtonSettings = new QPushButton("Settings", this);
-    ButtonSettings -> setGeometry(QRect(QPoint(int(hSize*.73),360), QSize(int(hSize*.23),buttonHeight)));
-
-    ButtonLoad = new QPushButton("Load ELF", this);
-    ButtonLoad -> setGeometry(QRect(QPoint(int(hSize*.85),250), QSize(int(hSize*.11),buttonHeight)));
-    ButtonExport = new QPushButton("Save ELF", this);
-    ButtonExport -> setGeometry(QRect(QPoint(int(hSize*.73),250), QSize(int(hSize*.11),buttonHeight)));
-
-    ButtonLoadMods = new QPushButton("Load Mods", this);
-    ButtonLoadMods -> setGeometry(QRect(QPoint(int(hSize*.85),280), QSize(int(hSize*.11),buttonHeight)));
-    ButtonSaveMod = new QPushButton("Save Mod", this);
-    ButtonSaveMod -> setGeometry(QRect(QPoint(int(hSize*.73),280), QSize(int(hSize*.11),buttonHeight)));
-
-    ButtonISO = new QPushButton("Save ISO", this);
-    ButtonISO -> setGeometry(QRect(QPoint(int(hSize*.73),325), QSize(int(hSize*.23),buttonHeight)));*/
     MessagePopup = new QMessageBox(this);
 
-    connect(ButtonDelete, &QPushButton::released, [this] {mainReader->handleDelete(*this);});
-    connect(ButtonInsert, &QPushButton::released, [this] {mainReader->handleInsert(*this);});
-    connect(ButtonReplace, &QPushButton::released, [this] {mainReader->handleReplace(*this);});
-    connect(Button10Up, &QPushButton::released, [this, longScroll] {mainReader->scrollMIPS(-longScroll, *this);});
-    connect(Button10Down, &QPushButton::released, [this, longScroll] {mainReader->scrollMIPS(longScroll, *this);});
-    connect(Button1Up, &QPushButton::released, [this, shortScroll] {mainReader->scrollMIPS(-shortScroll, *this);});
-    connect(Button1Down, &QPushButton::released, [this, shortScroll] {mainReader->scrollMIPS(shortScroll, *this);});
+    connect(ButtonDelete, &QPushButton::released, this, [this] {mainReader->handleDelete();});
+    connect(ButtonInsert, &QPushButton::released, this, [this] {mainReader->handleInsert();});
+    connect(ButtonReplace, &QPushButton::released, this, [this] {mainReader->handleReplace();});
+    connect(Button10Up, &QPushButton::released, this, [this, longScroll] {mainReader->scrollMIPS(-longScroll);});
+    connect(Button10Down, &QPushButton::released, this, [this, longScroll] {mainReader->scrollMIPS(longScroll);});
+    connect(Button1Up, &QPushButton::released, this, [this, shortScroll] {mainReader->scrollMIPS(-shortScroll);});
+    connect(Button1Down, &QPushButton::released, this, [this, shortScroll] {mainReader->scrollMIPS(shortScroll);});
 
-//    connect(Button10Up, SIGNAL(QPushButton::released()), this, SLOT(mainReader.scrollMIPS(-longScroll)));
-//    connect(Button10Down, SIGNAL(QPushButton::released()), this, SLOT(mainReader.scrollMIPS(longScroll)));
-//    connect(Button1Up, SIGNAL(QPushButton::released()), this, SLOT(mainReader.scrollMIPS(-shortScroll)));
-//    connect(Button1Down, SIGNAL(QPushButton::released()), this, SLOT(mainReader.scrollMIPS(shortScroll)));
+    connect(ButtonAddress, &QPushButton::released, this, [this] {mainReader->jumpAddress();});
+    connect(actionLoadELF, &QAction::triggered, this, [this] {mainReader->loadFile();});
+    connect(actionSaveELF, &QAction::triggered, this, [this] {mainReader->saveFile();});
+    connect(actionSaveISO, &QAction::triggered, this, [this] {mainReader->isoSearcher();});
 
-    connect(ButtonAddress, &QPushButton::released, [this] {mainReader->jumpAddress(*this);});
-    //connect(ButtonAddress, SIGNAL(QPushButton::released()), this, SLOT(mainReader.jumpAddress(this)));
-    //connect(actionLoadELF, &QAction::triggered, this, [this] {mainReader->loadFile(*this->mainReader,*this);});
-    connect(actionLoadELF, &QAction::triggered, [this] {mainReader->loadFile(*this);});
-    connect(actionSaveELF, &QAction::triggered, [this] {mainReader->saveFile(*this);});
-    connect(actionSaveISO, &QAction::triggered, [this] {mainReader->isoSearcher(*this);});
-
-    connect(MipsWindow, &QPlainTextEdit::cursorPositionChanged, this, &ProgWindow::handleSelect);
-
-    connect(actionSaveMod, &QAction::triggered, [this] {modList->makeModList(*this);});
-    connect(actionLoadMod, &QAction::triggered, [this] {modList->loadModList(*this);});
-//    connect(actionLoadMod, &QAction::triggered, this, &ProgWindow::loadModList);
-//    connect(actionSaveMod, &QAction::triggered, this, &ProgWindow::makeModList);
-//    connect(actionSettings, &QAction::triggered, this, &ProgWindow::handleSettings);
-    //connect(actionLoadMod, &QAction::triggered, [this](){ProgWindow::handleOpen();});
-
-    //connect(ButtonSaveMod, &QPushButton::released, this, &MainWindow::makeModList);
-    //connect(ButtonLoadMods, &QPushButton::released, this, &MainWindow::loadModList);
-
-    //connect(ButtonISO, &QPushButton::released, this, &MainWindow::isoSearcher);
+    connect(actionSaveMod, &QAction::triggered, this, [this] {modList->makeModList(*this);});
+    connect(actionLoadMod, &QAction::triggered, this, [this] {modList->loadModList(*this);});
+    connect(actionSettings, &QAction::triggered, this, &ProgWindow::handleSettings);
 }
 
 ProgWindow::~ProgWindow()
@@ -155,17 +128,103 @@ ProgWindow::~ProgWindow()
     delete ui;
 }
 
-void ProgWindow::handleSelect(){
-    //selects a line of text.
-    if (MipsWindow->textCursor().atBlockEnd() == false){
-        MipsWindow->moveCursor(QTextCursor::StartOfLine);
-        MipsWindow->moveCursor(QTextCursor::EndOfLine, QTextCursor::KeepAnchor);
+void ProgWindow::handleSettings(){
+    //open a settings window
+    //should probably just make the connection to settingswindow::open but this will do for now
+    setW->open();
+}
+
+void ProgWindow::loadSettings(){
+    qDebug() << Q_FUNC_INFO << QCoreApplication::applicationDirPath();
+    QString fileIn = QCoreApplication::applicationDirPath() + "/settings.txt";
+    QString settingsRead;
+    QStringList settingsSplit;
+    QFile inputFile(fileIn);
+    if (inputFile.exists()){
+        inputFile.open(QIODevice::ReadOnly);
+        settingsRead = inputFile.readAll();
+        settingsSplit = settingsRead.split("\n");
+        setW->settingsValues.clear();
+        for (int i = settingsSplit.length()-1; i >= 0; i--){
+            qDebug() << Q_FUNC_INFO << settingsSplit[i];
+            if (settingsSplit[i] != ""){
+                setW->settingsValues.push_front(settingsSplit[i].split(":")[1].trimmed());
+            }
+        }
+    } else {
+        //settings file doesn't exist, write a file with the default settings
+        setW->writeSettings(&inputFile);
     }
 }
 
-void ProgWindow::handleSettings(){
-    //open a settings window
-    SettingsWindow->show();
+SettingsWindow::SettingsWindow(ProgWindow *sentParent){
+
+    parent = sentParent;
+    savedChanges = true;
+    sendUpdate = new QPushButton("Save Settings", this);
+    sendUpdate -> setGeometry(QRect(QPoint(25,25), QSize(200,25)));
+
+    connect(sendUpdate, &QPushButton::released, this, &SettingsWindow::updateSettings);
+}
+
+void SettingsWindow::updateSettings(){
+    qDebug() << Q_FUNC_INFO << QCoreApplication::applicationDirPath();
+    QString fileOut = QCoreApplication::applicationDirPath() + "/settings.txt";
+    QFile outputFile(fileOut);
+
+    if (!savedChanges){
+        qDebug() << Q_FUNC_INFO << "Settings changed";
+        outputFile.open(QIODevice::WriteOnly);
+        for(int i = 0; i < settingsNames.length(); i++){
+            if(i!= 0){
+                outputFile.write("\n");
+            }
+            outputFile.write(settingsNames[i].toUtf8()+": " + settingsValues[i].toUtf8());
+        }
+        savedChanges = true;
+    }
+
+    qDebug() << Q_FUNC_INFO << "Settings updated";
+}
+
+void SettingsWindow::writeSettings(QFile *outputFile){
+    qDebug() << Q_FUNC_INFO << "Settings file not found. Creating a default settings file.";
+    outputFile->open(QIODevice::WriteOnly);
+    for(int i = 0; i < settingsNames.length(); i++){
+        if(i!= 0){
+            outputFile->write("\n");
+        }
+        outputFile->write(settingsNames[i].toUtf8()+": " + settingsValues[i].toUtf8());
+    }
+}
+
+void SettingsWindow::open(){
+    settingsEdit = new QTableWidget(settingsNames.size(), 2, this);
+    settingsEdit->setGeometry(QRect(QPoint(50,50), QSize(300,300)));
+    for (int i =0; i < settingsNames.size();i++) {
+        QTableWidgetItem *nextSetName = settingsEdit->item(i ,0);
+        QTableWidgetItem *nextSetValue = settingsEdit->item(i ,1);
+        qDebug() << Q_FUNC_INFO << settingsNames[i] << ": " << settingsValues[i];
+        if(!nextSetName){
+            nextSetName = new QTableWidgetItem;
+            nextSetName->setFlags(Qt::ItemIsEditable);
+            settingsEdit->setItem(i ,0, nextSetName);
+        }
+        nextSetName->setText(settingsNames[i]);
+        if(!nextSetValue){
+            nextSetValue = new QTableWidgetItem;
+            settingsEdit->setItem(i ,1, nextSetValue);
+        }
+        nextSetValue->setText(settingsValues[i]);
+    }
+    connect(settingsEdit, &QTableWidget::cellChanged, this, [this](int row, int column) {changeSetting(row, column);});
+
+    show();
+}
+
+void SettingsWindow::changeSetting(int row, int column){
+    savedChanges = false;
+    settingsValues[row] = settingsEdit->item(row,1)->text();;
 }
 
 void ProgWindow::messageError(QString message){

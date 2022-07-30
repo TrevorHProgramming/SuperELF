@@ -1,20 +1,19 @@
 #include "mainwindow.h"
 
-void MIPSReader::start(MIPSReader& mainReader){
-    mainReader.addressOffset = 1048320;
-    mainReader.BufferStart = 256;
-    mainReader.MipsBuffer = " ";
-    mainReader.filebuffer = QByteArray(0);
+MIPSReader::MIPSReader(ProgWindow *passedParent){
+    parent = passedParent;
+    MipsBuffer = " ";
+    filebuffer = QByteArray(0);
 }
 
-void MIPSReader::updateFileBuffer(ProgWindow& MainWindow){
+void MIPSReader::updateFileBuffer(){
     //Pull data from the full file buffer and translate it
     //much more efficient than translating the entire file and holding that in RAM
-    int BufferEnd = BufferStart + 256;
-    int BufferNow = BufferStart;
+    int BufferEnd = bufferStart + 256;
+    int BufferNow = bufferStart;
     WindowBuffer = "";
     MipsBuffer = "";
-    WindowBuffer.append(filebuffer.mid(BufferStart, BufferEnd));
+    WindowBuffer.append(filebuffer.mid(bufferStart, BufferEnd));
     linelist->clear();
     addresslist->clear();
     QString temp = "";
@@ -22,14 +21,13 @@ void MIPSReader::updateFileBuffer(ProgWindow& MainWindow){
     QString realHex;
     QByteArray tempBuffer;
     int j = 0;
-    if (MainWindow.radioInst->isChecked()){
+    if (parent->radioInst->isChecked()){
         for (int i = 0; i < 256; i+=4){
             addresslist[j] = QString::number(BufferNow + addressOffset, 16).rightJustified(8, '0');
             temp = " | ";
             //actual code will translate here and append to line
-            realInst = MainWindow.binChanger.hex_to_bin(WindowBuffer.mid(i,4));
-            temp += binToInst->convToInstruction(realInst, MainWindow);
-            temp += '\n';
+            realInst = parent->binChanger.hex_to_bin(WindowBuffer.mid(i,4));
+            temp += binToInst->convToInstruction(realInst, *parent);
 
             linelist[j] = temp;
             BufferNow += 4;
@@ -47,88 +45,97 @@ void MIPSReader::updateFileBuffer(ProgWindow& MainWindow){
             realHex = QString(tempBuffer.toHex());
             //realHex = QString(WindowBuffer.mid(i,4).toHex()); //needs to be reversed
             temp += realHex;
-            temp += '\n';
             linelist[j] = temp;
             BufferNow += 4;
             j += 1;
         }
     }
-    updateWindowBuffer(MainWindow);
+    updateWindowBuffer();
 }
 
-void MIPSReader::updateWindowBuffer(ProgWindow& MainWindow){
+void MIPSReader::updateWindowBuffer(){
+    QStringList itemList;
+    parent->MipsList->clear();
     MipsBuffer = "";
     for (int i = 0; i < 64; ++i){
         MipsBuffer += addresslist[i];
         MipsBuffer += linelist[i];
+        itemList.push_back(addresslist[i]+linelist[i]);
     }
-    MainWindow.MipsWindow->setPlainText(MipsBuffer);
+    parent->MipsList->insertItems(0,itemList);
+    parent->MipsList->setItemAlignment(Qt::AlignVCenter);
 }
 
-void MIPSReader::scrollMIPS(int amount, ProgWindow& MainWindow){
-    BufferStart += amount;
-    updateFileBuffer(MainWindow);
+void MIPSReader::scrollMIPS(int amount){
+    bufferStart += amount;
+    updateFileBuffer();
 }
 
-void MIPSReader::jumpAddress(ProgWindow& MainWindow){
-    QString entry = MainWindow.AddressBox -> text();
+void MIPSReader::jumpAddress(){
+    QString entry = parent->AddressBox -> text();
     if (entry.length() != 0){
         QString jumpaddress = entry;
         long long numjumpaddress = jumpaddress.toLongLong(nullptr, 16) - addressOffset;
-        BufferStart = numjumpaddress;
-        updateFileBuffer(MainWindow);
+        bufferStart = numjumpaddress;
+        updateFileBuffer();
     }
     else {
         qDebug() << "Not a valid address.";
-        MainWindow.messageError("Not a valid address.");
+        parent->messageError("Not a valid address.");
     }
 }
 
-void MIPSReader::loadFile(ProgWindow& MainWindow){
-    QString entry = QFileDialog::getOpenFileName(&MainWindow, MainWindow.tr("Load ELF"), QDir::currentPath(), MainWindow.tr("All Files (*.*)"));
-    qDebug() << "entry value is: " << entry;
+void MIPSReader::loadFile(){
+    addressOffset = parent->setW->settingsValues[2].toLong(nullptr, 16);
+    bufferStart = parent->setW->settingsValues[3].toLong(nullptr, 16);
+    qDebug() << Q_FUNC_INFO << "address offset:" << addressOffset << parent->setW->settingsValues[2] << "buffer start:" << bufferStart << parent->setW->settingsValues[3];
+    QString entry = QFileDialog::getOpenFileName(parent, parent->tr("Load ELF"), QDir::currentPath(), parent->tr("All Files (*.*)"));
+    //qDebug() << Q_FUNC_INFO << "entry value is: " << entry;
     if (entry.length() != 0){
         QFile filein(entry);
         if (!filein.open(QIODevice::ReadOnly)){
-            MainWindow.MessagePopup->setText("Could not open file " + fileInPath);
-            MainWindow.MessagePopup->setWindowTitle("File error!");
-            MainWindow.MessagePopup->open();
+            parent->MessagePopup->setText("Could not open file " + fileInPath);
+            parent->MessagePopup->setWindowTitle("File error!");
+            parent->MessagePopup->open();
             return;
         }
-        MainWindow.mainReader->filebuffer = QByteArray(filein.readAll());
-        MainWindow.modList->clear();
-        MainWindow.mainReader->updateFileBuffer(MainWindow);
+        filebuffer = QByteArray(filein.readAll());
+        parent->modList->clear();
+        updateFileBuffer();
     }
-
 }
 
-void MIPSReader::saveFile(ProgWindow& MainWindow){
-    if (MainWindow.mainReader->filebuffer.isEmpty()) {
-        MainWindow.messageError("No file to save. Load an ELF first.");
+void MIPSReader::saveFile(){
+    if (filebuffer.isEmpty()) {
+        parent->messageError("No file to save. Load an ELF first.");
         return;
     }
-    QString entry = QFileDialog::getSaveFileName(&MainWindow, MainWindow.tr("Save ELF"), QDir::currentPath(), MainWindow.tr("Binary Files (*.bin)"));
+    QString entry = QFileDialog::getSaveFileName(parent, parent->tr("Save ELF"), QDir::currentPath(), parent->tr("Binary Files (*.bin)"));
     if (entry.length() != 0){
         fileOutPath = entry;
         QFile fileout(fileOutPath);
         if(!fileout.open(QIODevice::WriteOnly)) {
-            MainWindow.messageError("Could not open file " + fileOutPath);
+            parent->messageError("Could not open file " + fileOutPath);
             return;
         }
         fileout.write(filebuffer);
-        MainWindow.messageSuccess("ELF Saved.");
+        parent->messageSuccess("ELF Saved.");
     }
 }
 
-void MIPSReader::handleInsert(ProgWindow& MainWindow){
+void MIPSReader::handleInsert(){
     //step 1: check to see if anything has been typed in the entry line
     //step 2: check to see if something is selected in MipsWindow
     //step 3: insert new line after selected line into the buffer
     //step 4: update MipsWindow and clear entry
-    QString entry = MainWindow.InstructionBox -> text();
-    QString selection = MainWindow.MipsWindow->textCursor().QTextCursor::selectedText();
-    QTextCursor currentCursor(MainWindow.MipsWindow->textCursor());
-    int currentLine = currentCursor.position();
+    QString entry = parent->InstructionBox->text();
+    //QString selection = parent->MipsWindow->textCursor().QTextCursor::selectedText();
+    if(parent->MipsList->selectedItems().size() == 0){
+        parent->messageError("Please select a line to insert at.");
+        return;
+    }
+    QString selection = parent->MipsList->currentItem()->text();
+    int currentLine = parent->MipsList->currentRow();
     QByteArray convReturn;
     QByteArray revReturn;
     ModLine modLine;
@@ -138,13 +145,13 @@ void MIPSReader::handleInsert(ProgWindow& MainWindow){
 
         //convert entry to instruction. then convert each part of the instruction into an int and put thos into bytearrays. return the bytearrays
         //ex 10000001 00000000 00000000 00000001 -> 129 0 0 1 -> loop to convert each to bytearray then combine them
-        if (MainWindow.radioInst->isChecked()){
+        if (parent->radioInst->isChecked()){
             convReturn = instToBin->convFromInst(entry);
             filebuffer.insert(numselectaddress, convReturn);
-            modLine = modLine.create(0, MainWindow.modList->modLineList.size(), numselectaddress, convReturn);
-            MainWindow.modList->adjustAddresses(*MainWindow.modList, modLine.address, modLine.lineType);
-            MainWindow.modList->modLineList.append(modLine);
-            updateFileBuffer(MainWindow);
+            modLine = modLine.create(0, parent->modList->modLineList.size(), numselectaddress, convReturn);
+            parent->modList->adjustAddresses(*parent->modList, modLine.address, modLine.lineType);
+            parent->modList->modLineList.append(modLine);
+            updateFileBuffer();
         }
         else {
             convReturn = QByteArray::fromHex(entry.toUtf8());
@@ -152,43 +159,47 @@ void MIPSReader::handleInsert(ProgWindow& MainWindow){
                 revReturn += convReturn.mid(3-k, 1);
             }
             filebuffer.insert(numselectaddress, revReturn);
-            modLine = modLine.create(0, MainWindow.modList->modLineList.size(), numselectaddress, revReturn);
-            MainWindow.modList->adjustAddresses(*MainWindow.modList, modLine.address, modLine.lineType);
-            MainWindow.modList->modLineList.append(modLine);
-            updateFileBuffer(MainWindow);
+            modLine = modLine.create(0, parent->modList->modLineList.size(), numselectaddress, revReturn);
+            parent->modList->adjustAddresses(*parent->modList, modLine.address, modLine.lineType);
+            parent->modList->modLineList.append(modLine);
+            updateFileBuffer();
         }
-        currentCursor.setPosition(currentLine);
-        MainWindow.MipsWindow->setTextCursor(currentCursor);
+        parent->MipsList->setCurrentRow(currentLine);
     }
 }
 
-void MIPSReader::handleDelete(ProgWindow& MainWindow){
+void MIPSReader::handleDelete(){
     //get address of line and remove from buffer
-    QString selection = MainWindow.MipsWindow->textCursor().QTextCursor::selectedText();
-    QTextCursor currentCursor(MainWindow.MipsWindow->textCursor());
-    int currentLine = currentCursor.position();
+    if(parent->MipsList->selectedItems().size() == 0){
+        parent->messageError("Please select a line to delete.");
+        return;
+    }
+    QString selection = parent->MipsList->currentItem()->text();
+    int currentLine = parent->MipsList->currentRow();
     //qDebug() << selection;
     QString selectaddress = selection.left(8);
     int numselectaddress = selectaddress.toInt(nullptr, 16) - addressOffset;
 
 
     ModLine modLine;
-    modLine = modLine.create(1, MainWindow.modList->modLineList.size(), numselectaddress, 0);
-    MainWindow.modList->adjustAddresses(*MainWindow.modList, modLine.address, modLine.lineType);
-    MainWindow.modList->modLineList.append(modLine);
+    modLine = modLine.create(1, parent->modList->modLineList.size(), numselectaddress, 0);
+    parent->modList->adjustAddresses(*parent->modList, modLine.address, modLine.lineType);
+    parent->modList->modLineList.append(modLine);
 
     //qDebug() << MainWindow.binChanger.reverse_input(MainWindow.binChanger.hex_to_bin(filebuffer.mid(numselectaddress, 4)), 8);
     filebuffer.replace(numselectaddress, 4, "");
-    updateFileBuffer(MainWindow);
-    currentCursor.setPosition(currentLine);
-    MainWindow.MipsWindow->setTextCursor(currentCursor);
+    updateFileBuffer();
+    parent->MipsList->setCurrentRow(currentLine);
 }
 
-void MIPSReader::handleReplace(ProgWindow& MainWindow){
-    QString entry = MainWindow.InstructionBox -> text();
-    QString selection = MainWindow.MipsWindow->textCursor().QTextCursor::selectedText();
-    QTextCursor currentCursor(MainWindow.MipsWindow->textCursor());
-    int currentLine = currentCursor.position();
+void MIPSReader::handleReplace(){
+    QString entry = parent->InstructionBox -> text();
+    if(parent->MipsList->selectedItems().size() == 0){
+        parent->messageError("Please select a line to replace.");
+        return;
+    }
+    QString selection = parent->MipsList->currentItem()->text();
+    int currentLine = parent->MipsList->currentRow();
     QByteArray convReturn;
     QByteArray revReturn;
     ModLine modLine;
@@ -197,15 +208,15 @@ void MIPSReader::handleReplace(ProgWindow& MainWindow){
         int numselectaddress = selectaddress.toInt(nullptr, 16) - addressOffset;
         //convert entry to instruction. then convert each part of the instruction into an int and put those into bytearrays. return the bytearrays
         //ex 10000001 00000000 00000000 00000001 -> 129 0 0 1 -> loop to convert each to bytearray then combine them
-        if (MainWindow.radioInst->isChecked()){
+        if (parent->radioInst->isChecked()){
             convReturn = instToBin->convFromInst(entry);
             filebuffer.replace(numselectaddress, 4, convReturn);
-            modLine = modLine.create(1, MainWindow.modList->modLineList.size(), numselectaddress, 0);
-            MainWindow.modList->adjustAddresses(*MainWindow.modList, modLine.address, modLine.lineType);
-            MainWindow.modList->modLineList.append(modLine);
-            modLine = modLine.create(0, MainWindow.modList->modLineList.size(), numselectaddress, convReturn);
-            MainWindow.modList->adjustAddresses(*MainWindow.modList, modLine.address, modLine.lineType);
-            MainWindow.modList->modLineList.append(modLine);
+            modLine = modLine.create(1, parent->modList->modLineList.size(), numselectaddress, 0);
+            parent->modList->adjustAddresses(*parent->modList, modLine.address, modLine.lineType);
+            parent->modList->modLineList.append(modLine);
+            modLine = modLine.create(0, parent->modList->modLineList.size(), numselectaddress, convReturn);
+            parent->modList->adjustAddresses(*parent->modList, modLine.address, modLine.lineType);
+            parent->modList->modLineList.append(modLine);
         }
         else {
             convReturn = QByteArray::fromHex(entry.toUtf8());
@@ -213,17 +224,16 @@ void MIPSReader::handleReplace(ProgWindow& MainWindow){
                 revReturn += convReturn.mid(3-k, 1);
             }*/ //removing the reversal to make copying from IDA easier
             filebuffer.replace(numselectaddress, 4, revReturn);
-            modLine = modLine.create(1, MainWindow.modList->modLineList.size(), numselectaddress, 0);
-            MainWindow.modList->adjustAddresses(*MainWindow.modList, modLine.address, modLine.lineType);
-            MainWindow.modList->modLineList.append(modLine);
-            modLine = modLine.create(0, MainWindow.modList->modLineList.size(), numselectaddress, revReturn);
-            MainWindow.modList->adjustAddresses(*MainWindow.modList, modLine.address, modLine.lineType);
-            MainWindow.modList->modLineList.append(modLine);
+            modLine = modLine.create(1, parent->modList->modLineList.size(), numselectaddress, 0);
+            parent->modList->adjustAddresses(*parent->modList, modLine.address, modLine.lineType);
+            parent->modList->modLineList.append(modLine);
+            modLine = modLine.create(0, parent->modList->modLineList.size(), numselectaddress, revReturn);
+            parent->modList->adjustAddresses(*parent->modList, modLine.address, modLine.lineType);
+            parent->modList->modLineList.append(modLine);
         }
-        updateFileBuffer(MainWindow);
+        updateFileBuffer();
     }
-    currentCursor.setPosition(currentLine);
-    MainWindow.MipsWindow->setTextCursor(currentCursor);
+    parent->MipsList->setCurrentRow(currentLine+1);
 }
 
 //move to BinChanger
@@ -235,9 +245,9 @@ QByteArray makeNullArray(int length){
     return partFiller;
 }
 
-void MIPSReader::isoSearcher(ProgWindow& MainWindow){
-    if (MainWindow.mainReader->filebuffer.isEmpty()) {
-        MainWindow.messageError("No ELF data to write to an ISO. Load an ELF first.");
+void MIPSReader::isoSearcher(){
+    if (filebuffer.isEmpty()) {
+        parent->messageError("No ELF data to write to an ISO. Load an ELF first.");
         return;
     }
 
@@ -252,8 +262,8 @@ void MIPSReader::isoSearcher(ProgWindow& MainWindow){
 
 
     //std::ifstream isoInFile(isoInPath.toStdString(), std::ios::binary);
-    QString isoInPath = QFileDialog::getOpenFileName(&MainWindow, MainWindow.tr("Load Base ISO"), QDir::currentPath(), MainWindow.tr("ISO Files (*.iso)"));
-    QString isoOutPath = QFileDialog::getSaveFileName(&MainWindow, MainWindow.tr("Save New ISO"), QDir::currentPath(), MainWindow.tr("ISO Files (*.iso)"));
+    QString isoInPath = QFileDialog::getOpenFileName(parent, parent->tr("Load Base ISO"), QDir::currentPath(), parent->tr("ISO Files (*.iso)"));
+    QString isoOutPath = QFileDialog::getSaveFileName(parent, parent->tr("Save New ISO"), QDir::currentPath(), parent->tr("ISO Files (*.iso)"));
 
     QFile isoInFile(isoInPath);
     QFile isoOutFile(isoOutPath);
@@ -261,12 +271,12 @@ void MIPSReader::isoSearcher(ProgWindow& MainWindow){
     //if (!isoInFile){
     if(!isoInFile.open(QIODevice::ReadOnly)){
         qDebug() << "Could not open input iso";
-        MainWindow.messageError("Could not open input file " + isoInPath);
+        parent->messageError("Could not open input file " + isoInPath);
         return;
     }
     if(!isoOutFile.open(QIODevice::WriteOnly)){
         qDebug() << "Could not open output iso";
-        MainWindow.messageError("Could not open input file " + isoOutPath);
+        parent->messageError("Could not open input file " + isoOutPath);
         return;
     }
     uint32_t value;
@@ -315,7 +325,7 @@ void MIPSReader::isoSearcher(ProgWindow& MainWindow){
         }
 
     }
-    MainWindow.messageSuccess("ISO Saved.");
+    parent->messageSuccess("ISO Saved.");
     qDebug() << "Done.";
 }
 
