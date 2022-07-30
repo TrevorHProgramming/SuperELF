@@ -192,7 +192,7 @@ QByteArray InstToBin::convFromInst(QString instruction)
         spacePos = findInst.indexOf(" ");
         II[i] = findInst.left(spacePos);
         findInst = findInst.mid(spacePos+1, instLength);
-        qDebug() << Q_FUNC_INFO << "modsplit: II[" << i <<"]:" << II[i];
+        //qDebug() << Q_FUNC_INFO << "modsplit: II[" << i <<"]:" << II[i];
     }
 
 

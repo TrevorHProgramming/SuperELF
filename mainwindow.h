@@ -5,10 +5,8 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QListView>
-#include <QPlainTextEdit>
 #include <QLabel>
 #include <QMouseEvent>
-#include <QTextCursor>
 #include <QTextDocumentFragment>
 #include <QDebug>
 #include <QFile>
@@ -23,6 +21,7 @@
 #include <QMessageBox>
 #include <QMenu>
 #include <QMenuBar>
+#include <QListWidget>
 
 #include <iostream>
 #include <stdio.h>
@@ -45,6 +44,28 @@ QT_END_NAMESPACE
 extern QString genRegList[];
 extern QString floatRegList[];
 
+class SettingsWindow : public QWidget {
+    Q_OBJECT
+
+public:
+    explicit SettingsWindow(ProgWindow *sentParent = nullptr);
+    ~SettingsWindow();
+    ProgWindow *parent;
+    QStringList settingsNames = {"Starting window height","Starting window width","Address offset","Starting address","Long scroll length","Short scroll length"};
+    QStringList settingsValues = {"1024","768","0","0","16","4"}; //these are stored as strings since the address ones will be in hex
+    QTableWidget *settingsEdit;
+
+    void open();
+    void writeSettings(QFile *outputFile);
+    void changeSetting(int row, int column);
+
+private slots:
+    void updateSettings();
+private:
+    QPushButton *sendUpdate;
+    bool savedChanges;
+};
+
 class ProgWindow : public QMainWindow
 {
     Q_OBJECT
@@ -52,9 +73,10 @@ class ProgWindow : public QMainWindow
 public:
     explicit ProgWindow(QWidget *parent = nullptr);
     ~ProgWindow();
-    const static int hSize = 1024;
-    const static int vSize = 768;
+    int hSize = 1024;
+    int vSize = 768;
     Ui::MainWindow *ui;
+    SettingsWindow *setW;
     QMenuBar *menuMain;
     MIPSReader *mainReader;
     BranchFinder *branchFinder;
@@ -68,8 +90,10 @@ public:
     QPushButton *ButtonReplace;
 
     QLabel *LabelAddress;
-    QPlainTextEdit *MipsWindow;
     FileData fileData;
+
+    QListWidget *MipsList;
+    //QTableWidget *MipsTable;
 
     QPushButton *Button1Up;
     QPushButton *Button10Up;
@@ -79,7 +103,6 @@ public:
     QPushButton *ButtonAddress;
 
     QPushButton *ButtonSettings;
-    QWidget *SettingsWindow;
     QPushButton *ButtonLoad;
     QPushButton *ButtonExport;
     QPushButton ButtonUpdateSettings;
@@ -94,7 +117,6 @@ public:
 
 public slots:
 
-    void handleSelect();
     void handleSettings();
 
 //    void loadModList();
@@ -106,19 +128,11 @@ public slots:
     qint64 shortWrite( QFile& file, int16_t var );
     qint64 intWrite( QFile& file, int32_t var );
     qint64 longWrite( QFile& file, int64_t var );
+
+private:
+    void loadSettings();
 };
 
-/*class SettingsWindow : public QWidget {
-    Q_OBJECT
 
-public:
-    explicit SettingsWindow(QWidget *parent = nullptr);
-    ~SettingsWindow();
-
-private slots:
-    void updateSettings();
-private:
-    QPushButton *sendUpdate;
-};*/
 
 #endif // MAINWINDOW_H
