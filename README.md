@@ -1,4 +1,4 @@
-# SuperELF v0.5
+# SuperELF v0.6
 A PS2 .ELF Modding Tool
 
 Super ELF (SELF) is a MIPS editor currently intended for use with Playstation 2 ELF files. SELF was made using QT libraries. 
@@ -38,8 +38,8 @@ To load mods:
   
 <b>PLANNED MAJOR UPDATES</b>
 1. Add VU instructions.
-2. Add system to update all function and address references when adding or removing code.
+2. Add system to update all function and address references when adding or removing code. Some work has been done on this, but it has yet to be successful. 
+3. Improve ISO writing to allow for different-sized ELF files to be written to an ISO. Since the current ISO method works and the ISO can be manually rebuilt, this is low priority, but the significant work required for it puts it in this section. 
 
 <b>PLANNED MINOR UPDATES</b>
-1. Improve the UI to be resizable.
-2. Add a settings menu to keep preferences between sessions. Settings are currently hardcoded. 
+1. Add a table to show currently loaded mods and what code they affect.
